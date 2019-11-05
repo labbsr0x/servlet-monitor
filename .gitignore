@@ -1,0 +1,14 @@
+*.class
+*.jar
+*.war
+*.ear
+.idea
+*.iml
+.classpath
+.project
+.settings
+.DS_Store
+target/
+
+# Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
+!/.mvn/wrapper/maven-wrapper.jar
