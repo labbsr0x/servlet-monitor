@@ -90,6 +90,7 @@
                     <releaseProfiles>release</releaseProfiles>
                     <autoVersionSubmodules>false</autoVersionSubmodules>
                     <tagNameFormat>@{project.version}</tagNameFormat>
+                    <remoteTagging>false</remoteTagging>
                     <goals>deploy</goals>
                 </configuration>
             </plugin>
