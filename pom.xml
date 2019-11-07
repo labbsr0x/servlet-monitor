@@ -9,7 +9,7 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Servlet Monitor Client</name>
+    <name>servlet-monitor</name>
     <description>
         HTTP filter collector and servlet exporter to Prometheus metrics
     </description>
