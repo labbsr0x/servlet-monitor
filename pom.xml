@@ -13,6 +13,7 @@
     <description>
         HTTP filter collector and servlet exporter to Prometheus metrics
     </description>
+    <url>https://github.com/labbsr0x/servlet-monitor</url>
 
     <licenses>
         <license>
