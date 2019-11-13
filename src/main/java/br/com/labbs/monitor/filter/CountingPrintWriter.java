@@ -1,5 +1,8 @@
 package br.com.labbs.monitor.filter;
 
+import java.io.PrintWriter;
+import java.util.Locale;
+
 /**
  *
  * @author rogerio
