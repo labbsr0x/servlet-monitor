@@ -11,6 +11,7 @@ public class CountingServletOutputStream extends ServletOutputStream {
 
     public CountingServletOutputStream(ServletOutputStream output) {
         this.output = new CountingOutputStream(output);
+        DebugUtil.debug("CountingServletOutputStream init");
     }
 
     @Override
@@ -21,6 +22,11 @@ public class CountingServletOutputStream extends ServletOutputStream {
     @Override
     public void flush() throws IOException {
         output.flush();
+    }
+
+    @Override
+    public void close() throws IOException {
+        output.close();
     }
 
     public long getByteCount() {
