@@ -84,6 +84,9 @@ public enum MonitorMetrics {
 
         initialized = true;
     }
+    public void cancelAllDependencyCheckers(){
+        dependencyCheckerExecutor.cancelTasks();
+    }
 
     /**
      * Add dependency to be checked successive between the period
@@ -105,5 +108,5 @@ public enum MonitorMetrics {
         };
         dependencyCheckerExecutor.schedule(task, period);
     }
-
+ 
 }
