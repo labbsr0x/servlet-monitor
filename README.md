@@ -116,6 +116,9 @@ long periodIntervalInMillis = 15000;
 MonitorMetrics.INSTANCE.addDependencyChecker(fakeChecker, periodIntervalInMillis);
 ```
 
+> **_NOTE_**: 
+> The dependency checkers will run on a new thread, to prevent memory leak, make sure to call the method ``MonitorMetrics.INSTANCE.cancelAllDependencyCheckers()`` on undeploying/terminating the web app. 
+
 ## Big Brother
 
 This is part of a more large application called [Big Brother](https://github.com/labbsr0x/big-brother).

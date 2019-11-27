@@ -13,6 +13,15 @@ public class DependencyCheckerExecutor {
     }
 
     /**
+     * Terminates the executor timer, discarding any currently scheduled tasks.
+     * Removes all cancelled tasks from the executor timer's task queue.
+     */
+    public void cancelTasks(){
+        timer.cancel();
+        timer.purge();
+    }
+
+    /**
      * Schedules the specified task for repeated <i>fixed-rate execution period</i>.
      *
      * @param task task to be executed

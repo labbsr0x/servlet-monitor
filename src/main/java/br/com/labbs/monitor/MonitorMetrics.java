@@ -86,6 +86,13 @@ public enum MonitorMetrics {
     }
 
     /**
+     * Cancel all scheduled dependency checkers and terminates the executor timer.
+     */
+    public void cancelAllDependencyCheckers(){
+        dependencyCheckerExecutor.cancelTasks();
+    }
+
+    /**
      * Add dependency to be checked successive between the period
      *
      * @param checker dependency checker
@@ -105,5 +112,5 @@ public enum MonitorMetrics {
         };
         dependencyCheckerExecutor.schedule(task, period);
     }
-
+ 
 }
