@@ -11,6 +11,10 @@ public class DependencyCheckerExecutor {
     public DependencyCheckerExecutor() {
        timer = new Timer("monitor-metrics-dependency-checker");
     }
+    public void cancelTasks(){
+        timer.cancel();
+        timer.purge();
+    }
 
     /**
      * Schedules the specified task for repeated <i>fixed-rate execution period</i>.
