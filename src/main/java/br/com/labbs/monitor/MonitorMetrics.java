@@ -84,6 +84,10 @@ public enum MonitorMetrics {
 
         initialized = true;
     }
+
+    /**
+     * Cancel all scheduled dependency checkers and terminates the executor timer.
+     */
     public void cancelAllDependencyCheckers(){
         dependencyCheckerExecutor.cancelTasks();
     }

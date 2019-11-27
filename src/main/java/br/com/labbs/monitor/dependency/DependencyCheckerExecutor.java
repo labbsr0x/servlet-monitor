@@ -11,6 +11,11 @@ public class DependencyCheckerExecutor {
     public DependencyCheckerExecutor() {
        timer = new Timer("monitor-metrics-dependency-checker");
     }
+
+    /**
+     * Terminates the executor timer, discarding any currently scheduled tasks.
+     * Removes all cancelled tasks from the executor timer's task queue.
+     */
     public void cancelTasks(){
         timer.cancel();
         timer.purge();
