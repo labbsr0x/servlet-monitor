@@ -61,10 +61,10 @@ The `buckets` default value is `0.1, 0.3, 1.5, 10.5`.
 ```xml
 <filter>
     <filter-name>metricsFilter</filter-name>
-    <filter-class>MetricsFilterbr.com.labbs.monitor.filter.MetricsFilter</filter-class>
+    <filter-class>br.com.labbs.monitor.filter.MetricsCollectorFilter</filter-class>
     <init-param>
         <param-name>buckets</param-name>
-        <param-value>0.01,0.05,0.1,0.5,1,2.5,5,7.5,10</param-value>
+        <param-value>0.1,0.3,2,10</param-value>
     </init-param>
 </filter>
 <!-- This must be the first <filter-mapping> in the web.xml file so that you can get
