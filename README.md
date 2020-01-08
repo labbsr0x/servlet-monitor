@@ -7,10 +7,10 @@ A Servlet filter to add basic but very useful [Prometheus](https://prometheus.io
 The only exposed metrics (for now) are the following:
 
 ```
-request_seconds_bucket{type,status, method, addr, le}
-request_seconds_count{type, status, method, addr}
-request_seconds_sum{type, status, method, addr}
-response_size_bytes{type, status, method, addr} 
+request_seconds_bucket{type,status, method, addr, version, isError, le}
+request_seconds_count{type, status, method, addr, version, isError}
+request_seconds_sum{type, status, method, addr, version, isError}
+response_size_bytes{type, status, method, addr, version, isError} 
 dependency_up{name}
 ```
 

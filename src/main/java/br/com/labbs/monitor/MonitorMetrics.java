@@ -3,7 +3,10 @@ package br.com.labbs.monitor;
 import br.com.labbs.monitor.dependency.DependencyChecker;
 import br.com.labbs.monitor.dependency.DependencyCheckerExecutor;
 import br.com.labbs.monitor.dependency.DependencyState;
-import io.prometheus.client.*;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Counter;
+import io.prometheus.client.Gauge;
+import io.prometheus.client.Histogram;
 import io.prometheus.client.hotspot.DefaultExports;
 
 import java.util.TimerTask;
@@ -64,13 +67,13 @@ public enum MonitorMetrics {
 
         requestSeconds = Histogram.build().name(REQUESTS_SECONDS_METRIC_NAME)
                 .help("records in a histogram the number of http requests and their duration in seconds")
-                .labelNames("type", "status", "method", "addr" )
+                .labelNames("type", "status", "method", "addr", "version", "isError")
                 .buckets(buckets)
                 .register(collectorRegistry);
 
         responseSize = Counter.build().name(RESPONSE_SIZE_METRIC_NAME)
                 .help("counts the size of each http response")
-                .labelNames("type", "status", "method", "addr")
+                .labelNames("type", "status", "method", "addr", "version", "isError")
                 .register(collectorRegistry);
 
         dependencyUp = Gauge.build().name(DEPENDENCY_UP_METRIC_NAME)
@@ -83,6 +86,19 @@ public enum MonitorMetrics {
         }
 
         initialized = true;
+    }
+
+    public void collectTime(String type, String status, String method, String addr, String version, boolean isError, double elapsedSeconds) {
+        if (initialized) {
+            requestSeconds.labels(type, status, method, addr, version, Boolean.toString(isError))
+                    .observe(elapsedSeconds);
+        }
+    }
+
+    public void collectSize(String type, String status, String method, String addr, String version, boolean isError, final long size) {
+        if (initialized) {
+            MonitorMetrics.INSTANCE.responseSize.labels(type, status, method, addr, version, Boolean.toString(isError)).inc(size);
+        }
     }
 
     /**

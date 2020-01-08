@@ -43,17 +43,24 @@ public class MetricsCollectorFilter implements Filter {
     private static final String BUCKET_CONFIG_PARAM = "buckets";
     private static final String PATH_DEPTH_PARAM = "path-depth";
     private static final String EXCLUSIONS = "exclusions";
+    private static final String VERSION = "version";
     private static final String DEBUG = "debug";
     private final List<String> exclusions = new ArrayList<String>();
 
     private int pathDepth = 0;
+    private String version = "UNDEFINED";
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         double[] buckets = null;
         if (filterConfig != null) {
-            if (!isEmpty(filterConfig.getInitParameter(DEBUG))) {
-                DebugUtil.setDebug(filterConfig.getInitParameter(DEBUG));
+            String debugParam = filterConfig.getInitParameter(DEBUG);
+            if (!isEmpty(debugParam)) {
+                DebugUtil.setDebug(debugParam);
+            }
+            String versionParam = filterConfig.getInitParameter(VERSION);
+            if (!isEmpty(versionParam)) {
+                this.version = versionParam;
             }
             // Allow overriding of the path "depth" to track
             String pathDepthStr = filterConfig.getInitParameter(PATH_DEPTH_PARAM);
@@ -65,8 +72,9 @@ public class MetricsCollectorFilter implements Filter {
                 }
             }
             // Allow users to override the default bucket configuration
-            if (!isEmpty(filterConfig.getInitParameter(BUCKET_CONFIG_PARAM))) {
-                String[] bucketParams = filterConfig.getInitParameter(BUCKET_CONFIG_PARAM).split(",");
+            String bucketsParam = filterConfig.getInitParameter(BUCKET_CONFIG_PARAM);
+            if (!isEmpty(bucketsParam)) {
+                String[] bucketParams = bucketsParam.split(",");
                 buckets = new double[bucketParams.length];
 
                 for (int i = 0; i < bucketParams.length; i++) {
@@ -74,8 +82,9 @@ public class MetricsCollectorFilter implements Filter {
                 }
             }
             // Allow users to define paths to be excluded from metrics collect
-            if (!isEmpty(filterConfig.getInitParameter(EXCLUSIONS))) {
-                String[] arrayExclusions = filterConfig.getInitParameter(EXCLUSIONS).split(",");
+            String exclusionsParam = filterConfig.getInitParameter(EXCLUSIONS);
+            if (!isEmpty(exclusionsParam)) {
+                String[] arrayExclusions = exclusionsParam.split(",");
                 for (String string : arrayExclusions) {
                     exclusions.add(string.trim());
                 }
@@ -130,12 +139,17 @@ public class MetricsCollectorFilter implements Filter {
 
     private void collect(HttpServletRequest httpRequest, CountingServletResponse counterResponse, String path, double elapsedSeconds) throws IOException {
         final String method = httpRequest.getMethod();
-        final String statusRange = Integer.toString(counterResponse.getStatus());
+        final String status = Integer.toString(counterResponse.getStatus());
+        final boolean isError = isErrorStatus(counterResponse.getStatus());
         final long count = counterResponse.getByteCount();
+        final String scheme = httpRequest.getScheme();
         DebugUtil.debug(path, " ; bytes count = ", count);
-        MonitorMetrics.INSTANCE.requestSeconds.labels(httpRequest.getScheme(), statusRange, method, path)
-                .observe(elapsedSeconds);
-        MonitorMetrics.INSTANCE.responseSize.labels(httpRequest.getScheme(), statusRange, method, path).inc(count);
+        MonitorMetrics.INSTANCE.collectTime(scheme, status, method, path, this.version, isError, elapsedSeconds);
+        MonitorMetrics.INSTANCE.collectSize(scheme, status, method, path, this.version, isError, count);
+    }
+
+    private boolean isErrorStatus(int status) {
+        return status < 200 || status >= 400;
     }
 
     private boolean isEmpty(String s) {
