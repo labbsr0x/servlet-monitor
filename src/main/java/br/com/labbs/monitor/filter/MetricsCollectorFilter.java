@@ -7,8 +7,10 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * The MetricsFilter class provides a high-level filter that enables collection of (latency, amount and response
@@ -48,10 +50,13 @@ public class MetricsCollectorFilter implements Filter {
     private final List<String> exclusions = new ArrayList<String>();
 
     private int pathDepth = 0;
-    private String version = "UNDEFINED";
+    private String version;
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) {
+
+        this.version = getApplicationVersionFromPropertiesFile();
+
         double[] buckets = null;
         if (filterConfig != null) {
             String debugParam = filterConfig.getInitParameter(DEBUG);
@@ -175,6 +180,21 @@ public class MetricsCollectorFilter implements Filter {
             count++;
         } while (count <= pathDepth);
         return path.substring(0, i);
+    }
+
+    private String getApplicationVersionFromPropertiesFile() {
+        try {
+            final Properties p = new Properties();
+            final InputStream is = getClass().getResourceAsStream("/application.properties");
+            if (is != null) {
+                p.load(is);
+                return p.getProperty("application.version");
+            }
+            return "unknown";
+        } catch (Exception e) {
+            DebugUtil.debug("error reading version from application.properties file: ", e.getMessage());
+            return "error-reading-version";
+        }
     }
 
 }
