@@ -60,16 +60,16 @@ public class MetricsCollectorFilter implements Filter {
         double[] buckets = null;
         if (filterConfig != null) {
             String debugParam = filterConfig.getInitParameter(DEBUG);
-            if (!isEmpty(debugParam)) {
+            if (isNotEmpty(debugParam)) {
                 DebugUtil.setDebug(debugParam);
             }
             String versionParam = filterConfig.getInitParameter(VERSION);
-            if (!isEmpty(versionParam)) {
+            if (isNotEmpty(versionParam)) {
                 this.version = versionParam;
             }
             // Allow overriding of the path "depth" to track
             String pathDepthStr = filterConfig.getInitParameter(PATH_DEPTH_PARAM);
-            if (!isEmpty(pathDepthStr)) {
+            if (isNotEmpty(pathDepthStr)) {
                 try {
                     pathDepth = Integer.parseInt(pathDepthStr);
                 } catch (NumberFormatException e) {
@@ -78,7 +78,7 @@ public class MetricsCollectorFilter implements Filter {
             }
             // Allow users to override the default bucket configuration
             String bucketsParam = filterConfig.getInitParameter(BUCKET_CONFIG_PARAM);
-            if (!isEmpty(bucketsParam)) {
+            if (isNotEmpty(bucketsParam)) {
                 String[] bucketParams = bucketsParam.split(",");
                 buckets = new double[bucketParams.length];
 
@@ -88,7 +88,7 @@ public class MetricsCollectorFilter implements Filter {
             }
             // Allow users to define paths to be excluded from metrics collect
             String exclusionsParam = filterConfig.getInitParameter(EXCLUSIONS);
-            if (!isEmpty(exclusionsParam)) {
+            if (isNotEmpty(exclusionsParam)) {
                 String[] arrayExclusions = exclusionsParam.split(",");
                 for (String string : arrayExclusions) {
                     exclusions.add(string.trim());
@@ -157,8 +157,8 @@ public class MetricsCollectorFilter implements Filter {
         return status < 200 || status >= 400;
     }
 
-    private boolean isEmpty(String s) {
-        return s == null || s.trim().length() == 0;
+    private boolean isNotEmpty(String s) {
+        return s != null && s.trim().length() != 0;
     }
 
     private String substringMaxDepth(String path, int pathDepth) {
