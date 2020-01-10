@@ -116,6 +116,7 @@ e.g. exclude paths starting with '/metrics' or '/static'
 
 #### Setting application version
 
+##### Manually
 To provide the application version to the metrics collector, the `application.properties` file must exist in the project at the project resources path(Maven projects default path `src/main/resources`) with the application version set to `application.version` property.
 
 e.g. `src/main/resources/application.properties`
@@ -123,9 +124,9 @@ e.g. `src/main/resources/application.properties`
 application.version=1.0.2
 ```
 
-Check into your jar or war package if the file `classes/application.properties` exist.
+Make sure the file `classes/application.properties` exist into your jar or war package.
 
-##### Setting application version from Maven pom.xml file
+##### From Maven pom.xml file
 
 The process to automatically set application version retrieving the project version from the pom.xml file is using [Maven resource filtering](https://maven.apache.org/guides/getting-started/index.html#How_do_I_filter_resource_files).
 To have Maven filter resources when copying, simply set `filtering` to true for the resource directory in your `pom.xml`.
@@ -147,7 +148,7 @@ e.g. `src/main/resources/application.properties`
 application.version=${project.version}
 ```
 
-Check into your jar or war package if the file `classes/application.properties` exist and the property value is the same of the pom.xml file.
+Make sure the file `classes/application.properties` exist into your jar or war package and the property value is the same of the pom.xml file.
 
 ### Exporting metrics
 
