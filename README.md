@@ -18,7 +18,7 @@ Where, for a specific request, `type` tells which request protocol was used (e.g
 
 In detail:
 
-1. The `request_seconds_bucket` metric defines the histogram of how many requests are falling into the well defined buckets represented by the label `le`;
+1. The `request_seconds_bucket` metric defines the histogram of how many requests are falling into the well-defined buckets represented by the label `le`;
 
 2. The `request_seconds_count` is a counter that counts the overall number of requests with those exact label occurrences;
 
@@ -26,7 +26,7 @@ In detail:
 
 4. The `response_size_bytes` is a counter that computes how much data is being sent back to the user for a given request type. It captures the response size from the `content-length` response header. If there is no such header, the value exposed as metric will be zero;
 
-5. Finally, `dependency_up` is a metric to register weather a specific dependency is up (1) or down (0). The label `name` registers the dependency name;
+5. Finally, `dependency_up` is a metric to register whether a specific dependency is up (1) or down (0). The label `name` registers the dependency name;
 
 ## How to
 
@@ -55,17 +55,10 @@ The collector filter can be programmatically added to `javax.servlet.ServletCont
 
 You just need to place the code below in your `web.xml` file.
 
-The number of buckets is optionally overridable, and can be configured by passing a comma-separated string of doubles as the `buckets` init parameter. 
-The `buckets` default value is `0.1, 0.3, 1.5, 10.5`.
- 
 ```xml
 <filter>
     <filter-name>metricsFilter</filter-name>
-    <filter-class>MetricsFilterbr.com.labbs.monitor.filter.MetricsFilter</filter-class>
-    <init-param>
-        <param-name>buckets</param-name>
-        <param-value>0.01,0.05,0.1,0.5,1,2.5,5,7.5,10</param-value>
-    </init-param>
+    <filter-class>br.com.labbs.monitor.filter.MetricsCollectorFilter</filter-class>
 </filter>
 <!-- This must be the first <filter-mapping> in the web.xml file so that you can get
 the most accurate measurement of latency and response size. -->
@@ -74,11 +67,59 @@ the most accurate measurement of latency and response size. -->
     <url-pattern>/*</url-pattern>
 </filter-mapping>
 ```
-**This must be the first `<filter-mapping>` in the `web.xml` file so that you can get the most accurate measurement of latency and response size.**
+
+> :warning: **NOTE**: 
+> This must be the first `<filter-mapping>` in the `web.xml` file so that you can get the most accurate measurement of latency and response size.
+
+#### Metrics Collector filter parameters
+
+It is possible to use the following properties to configure the Metrics Collector Filter by init parameters on the web.xml file.
+
+
+##### Override default buckets
+
+The number of buckets is optionally overridable and can be configured by passing a comma-separated string of doubles as the `buckets` init parameter. 
+The `buckets` default value is `0.1, 0.3, 1.5, 10.5`.
+
+e.g.
+```xml
+<init-param>
+    <param-name>buckets</param-name>
+    <param-value>0.1,0.3,2,10</param-value>
+</init-param>
+```
+
+##### Define max path depth
+
+The max depth of the URI path(that is the value of `addr` label) can be configured by passing an integer value as the `path-depth` init parameter.
+By default, the filter will provide the full path granularity. Any number provided that is less than one will provide the full path granularity.
+
+e.g. 
+```xml
+<init-param>
+    <param-name>path-depth</param-name>
+    <param-value>1</param-value>
+</init-param>
+```
+
+> :warning: **NOTE**: 
+> Using full path granularity may affect performance
+
+##### Exclude path from metrics collect
+
+Exclusions of paths from collect can be configured by passing a comma-separated string of paths as the `exclusions` init parameter.
+
+e.g. exclude paths starting with '/metrics' or '/static'
+```xml
+<init-param>
+    <param-name>exclusions</param-name>
+    <param-value>/metrics,/static</param-value>
+</init-param>
+```
 
 ### Exporting metrics
 
-As well as the metrics filter, the class `MetricsServlet` can be also programmatically added to `javax.servlet.ServletContext` or initialized via `web.xml` file.
+As well as the metrics filter, the class `MetricsServlet` can also be programmatically added to `javax.servlet.ServletContext` or initialized via `web.xml` file.
 
 #### web.xml
 
@@ -116,10 +157,10 @@ long periodIntervalInMillis = 15000;
 MonitorMetrics.INSTANCE.addDependencyChecker(fakeChecker, periodIntervalInMillis);
 ```
 
-> **_NOTE_**: 
+> :warning: **NOTE**: 
 > The dependency checkers will run on a new thread, to prevent memory leak, make sure to call the method ``MonitorMetrics.INSTANCE.cancelAllDependencyCheckers()`` on undeploying/terminating the web app. 
 
 ## Big Brother
 
-This is part of a more large application called [Big Brother](https://github.com/labbsr0x/big-brother).
+This project is part of a more large application called [Big Brother](https://github.com/labbsr0x/big-brother).
 
