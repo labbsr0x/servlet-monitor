@@ -88,6 +88,18 @@ public enum MonitorMetrics {
         initialized = true;
     }
 
+    /**
+     *
+     * Collect latency metric request_seconds
+     *
+     * @param type which request protocol was used (e.g. grpc or http)
+     * @param status the response status(e.g. response HTTP status code)
+     * @param method the request method(e.g. HTTP methods GET, POST, PUT)
+     * @param addr the requested endpoint address
+     * @param version which version of your app handled the request
+     * @param isError if the status code reported is an error or not
+     * @param elapsedSeconds how long time did the request has executed
+     */
     public void collectTime(String type, String status, String method, String addr, String version, boolean isError, double elapsedSeconds) {
         if (initialized) {
             requestSeconds.labels(type, status, method, addr, version, Boolean.toString(isError))
@@ -95,6 +107,18 @@ public enum MonitorMetrics {
         }
     }
 
+    /**
+     *
+     * Collect size metric response_size_bytes
+     *
+     * @param type which request protocol was used (e.g. grpc or http)
+     * @param status the response status(e.g. response HTTP status code)
+     * @param method the request method(e.g. HTTP methods GET, POST, PUT)
+     * @param addr the requested endpoint address
+     * @param version which version of your app handled the request
+     * @param isError if the status code reported is an error or not
+     * @param size the response content size
+     */
     public void collectSize(String type, String status, String method, String addr, String version, boolean isError, final long size) {
         if (initialized) {
             MonitorMetrics.INSTANCE.responseSize.labels(type, status, method, addr, version, Boolean.toString(isError)).inc(size);
