@@ -14,7 +14,7 @@ public class DebugUtil {
     }
 
     public static void setDebug(String debug) {
-        setDebug(Boolean.valueOf(debug));
+        setDebug(Boolean.parseBoolean(debug));
     }
 
     public static void debug(String msg) {

@@ -3,7 +3,10 @@ package br.com.labbs.monitor;
 import br.com.labbs.monitor.dependency.DependencyChecker;
 import br.com.labbs.monitor.dependency.DependencyCheckerExecutor;
 import br.com.labbs.monitor.dependency.DependencyState;
-import io.prometheus.client.*;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Counter;
+import io.prometheus.client.Gauge;
+import io.prometheus.client.Histogram;
 import io.prometheus.client.hotspot.DefaultExports;
 
 import java.util.TimerTask;
@@ -64,13 +67,13 @@ public enum MonitorMetrics {
 
         requestSeconds = Histogram.build().name(REQUESTS_SECONDS_METRIC_NAME)
                 .help("records in a histogram the number of http requests and their duration in seconds")
-                .labelNames("type", "status", "method", "addr" )
+                .labelNames("type", "status", "method", "addr", "version", "isError")
                 .buckets(buckets)
                 .register(collectorRegistry);
 
         responseSize = Counter.build().name(RESPONSE_SIZE_METRIC_NAME)
                 .help("counts the size of each http response")
-                .labelNames("type", "status", "method", "addr")
+                .labelNames("type", "status", "method", "addr", "version", "isError")
                 .register(collectorRegistry);
 
         dependencyUp = Gauge.build().name(DEPENDENCY_UP_METRIC_NAME)
@@ -83,6 +86,43 @@ public enum MonitorMetrics {
         }
 
         initialized = true;
+    }
+
+    /**
+     *
+     * Collect latency metric request_seconds
+     *
+     * @param type which request protocol was used (e.g. grpc or http)
+     * @param status the response status(e.g. response HTTP status code)
+     * @param method the request method(e.g. HTTP methods GET, POST, PUT)
+     * @param addr the requested endpoint address
+     * @param version which version of your app handled the request
+     * @param isError if the status code reported is an error or not
+     * @param elapsedSeconds how long time did the request has executed
+     */
+    public void collectTime(String type, String status, String method, String addr, String version, boolean isError, double elapsedSeconds) {
+        if (initialized) {
+            requestSeconds.labels(type, status, method, addr, version, Boolean.toString(isError))
+                    .observe(elapsedSeconds);
+        }
+    }
+
+    /**
+     *
+     * Collect size metric response_size_bytes
+     *
+     * @param type which request protocol was used (e.g. grpc or http)
+     * @param status the response status(e.g. response HTTP status code)
+     * @param method the request method(e.g. HTTP methods GET, POST, PUT)
+     * @param addr the requested endpoint address
+     * @param version which version of your app handled the request
+     * @param isError if the status code reported is an error or not
+     * @param size the response content size
+     */
+    public void collectSize(String type, String status, String method, String addr, String version, boolean isError, final long size) {
+        if (initialized) {
+            MonitorMetrics.INSTANCE.responseSize.labels(type, status, method, addr, version, Boolean.toString(isError)).inc(size);
+        }
     }
 
     /**
