@@ -45,7 +45,6 @@ public class MetricsCollectorFilter implements Filter {
     private static final String BUCKET_CONFIG_PARAM = "buckets";
     private static final String PATH_DEPTH_PARAM = "path-depth";
     private static final String EXCLUSIONS = "exclusions";
-    private static final String VERSION = "version";
     private static final String DEBUG = "debug";
     private final List<String> exclusions = new ArrayList<String>();
 
@@ -62,10 +61,6 @@ public class MetricsCollectorFilter implements Filter {
             String debugParam = filterConfig.getInitParameter(DEBUG);
             if (isNotEmpty(debugParam)) {
                 DebugUtil.setDebug(debugParam);
-            }
-            String versionParam = filterConfig.getInitParameter(VERSION);
-            if (isNotEmpty(versionParam)) {
-                this.version = versionParam;
             }
             // Allow overriding of the path "depth" to track
             String pathDepthStr = filterConfig.getInitParameter(PATH_DEPTH_PARAM);
