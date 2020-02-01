@@ -4,17 +4,17 @@ A Servlet filter to add basic but very useful [Prometheus](https://prometheus.io
 
 ## Metrics
 
-The only exposed metrics (for now) are the following:
+The only exposed metrics are the following:
 
 ```
-request_seconds_bucket{type,status, method, addr, le}
-request_seconds_count{type, status, method, addr}
-request_seconds_sum{type, status, method, addr}
-response_size_bytes{type, status, method, addr} 
+request_seconds_bucket{type,status, method, addr, version, isError, le}
+request_seconds_count{type, status, method, addr, version, isError}
+request_seconds_sum{type, status, method, addr, version, isError}
+response_size_bytes{type, status, method, addr, version, isError} 
 dependency_up{name}
 ```
 
-Where, for a specific request, `type` tells which request protocol was used (e.g. `grpc` or `http`), `status` registers the response HTTP status, `method` registers the request method and `addr` registers the requested endpoint address.
+Where, for a specific request, `type` tells which request protocol was used (e.g. `grpc` or `http`), `status` registers the response HTTP status, `method` registers the request method, `addr` registers the requested endpoint address, `version` tells which version of your app handled the request and `isError` lets us know if the status code reported is an error or not.
 
 In detail:
 
@@ -43,13 +43,11 @@ Import the following dependency to your project:
     <version>${servlet-monitor-version}</version>
 </dependency>
 ```
-**Please use the latest version:** 
-
-[![Released Version](https://img.shields.io/maven-central/v/br.com.labbs/servlet-monitor.svg?maxAge=2000)](https://search.maven.org/search?q=br.com.labbs)
+**Please use the latest version:**  [![Released Version](https://img.shields.io/maven-central/v/br.com.labbs/servlet-monitor.svg?maxAge=2000)](https://search.maven.org/search?q=br.com.labbs)
 
 ### Collecting metrics
 
-The collector filter can be programmatically added to `javax.servlet.ServletContext` or initialized via `web.xml` file.
+The collector filter can be programmatically added to `javax.servlet.ServletContext` or initialized by `web.xml` file.
 
 #### web.xml
 
@@ -74,7 +72,6 @@ the most accurate measurement of latency and response size. -->
 #### Metrics Collector filter parameters
 
 It is possible to use the following properties to configure the Metrics Collector Filter by init parameters on the web.xml file.
-
 
 ##### Override default buckets
 
@@ -116,6 +113,42 @@ e.g. exclude paths starting with '/metrics' or '/static'
     <param-value>/metrics,/static</param-value>
 </init-param>
 ```
+
+#### Setting application version
+
+##### Manually
+To provide the application version to the metrics collector, the `application.properties` file must exist in the project at the project resources path(Maven projects default path `src/main/resources`) with the application version set to `application.version` property.
+
+e.g. `src/main/resources/application.properties`
+```properties
+application.version=1.0.2
+```
+
+Make sure the file `classes/application.properties` exist into your jar or war package.
+
+##### From Maven pom.xml file
+
+The process to automatically set application version retrieving the project version from the pom.xml file is using [Maven resource filtering](https://maven.apache.org/guides/getting-started/index.html#How_do_I_filter_resource_files).
+To have Maven filter resources when copying, simply set `filtering` to true for the resource directory in your `pom.xml`.
+```xml
+<build>
+    <resources>
+        <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
+        </resource>
+    </resources>
+</build>
+```
+
+Create the file `application.propeties` at the application resources path(most commonly `src/main/resources`) and add the `application.version=${project.version}` property whose value `${project.version}` will be supplied when the resource is filtered. 
+
+e.g. `src/main/resources/application.properties`
+```properties
+application.version=${project.version}
+```
+
+Make sure the file `classes/application.properties` exist into your jar or war package and the property value is the same of the pom.xml file.
 
 ### Exporting metrics
 
