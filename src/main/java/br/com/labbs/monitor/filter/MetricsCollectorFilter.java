@@ -3,7 +3,13 @@ package br.com.labbs.monitor.filter;
 import br.com.labbs.monitor.MonitorMetrics;
 import io.prometheus.client.SimpleTimer;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -49,13 +55,9 @@ public class MetricsCollectorFilter implements Filter {
     private final List<String> exclusions = new ArrayList<String>();
 
     private int pathDepth = 0;
-    private String version;
 
     @Override
     public void init(FilterConfig filterConfig) {
-
-        this.version = getApplicationVersionFromPropertiesFile();
-
         double[] buckets = null;
         if (filterConfig != null) {
             String debugParam = filterConfig.getInitParameter(DEBUG);
@@ -90,7 +92,8 @@ public class MetricsCollectorFilter implements Filter {
                 }
             }
         }
-        MonitorMetrics.INSTANCE.init(true, buckets);
+        String version = getApplicationVersionFromPropertiesFile();
+        MonitorMetrics.INSTANCE.init(true, version, buckets);
     }
 
     @Override
@@ -144,8 +147,8 @@ public class MetricsCollectorFilter implements Filter {
         final long count = counterResponse.getByteCount();
         final String scheme = httpRequest.getScheme();
         DebugUtil.debug(path, " ; bytes count = ", count);
-        MonitorMetrics.INSTANCE.collectTime(scheme, status, method, path, this.version, isError, elapsedSeconds);
-        MonitorMetrics.INSTANCE.collectSize(scheme, status, method, path, this.version, isError, count);
+        MonitorMetrics.INSTANCE.collectTime(scheme, status, method, path, isError, elapsedSeconds);
+        MonitorMetrics.INSTANCE.collectSize(scheme, status, method, path, isError, count);
     }
 
     private boolean isErrorStatus(int status) {
