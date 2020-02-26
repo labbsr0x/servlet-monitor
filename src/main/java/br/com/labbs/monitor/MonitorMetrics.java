@@ -12,20 +12,23 @@ import io.prometheus.client.hotspot.DefaultExports;
 import java.util.TimerTask;
 
 /**
- * Singleton MonitorMetrics provides the three following Prometheus metrics:
+ * Singleton MonitorMetrics provides the four following Prometheus metrics:
  *
  * <pre>
  * {@code
  * Histogram requestSeconds:
- *    request_seconds_bucket{type,status, method, addr, le}
- *    request_seconds_count{type, status, method, addr}
- *    request_seconds_sum{type, status, method, addr}
+ *    request_seconds_bucket{type,status, method, addr, isError, le}
+ *    request_seconds_count{type, status, method, addr, isError}
+ *    request_seconds_sum{type, status, method, addr, isError}
  *
  * Counter responseSize:
- *    response_size_bytes{type, status, method, addr}
+ *    response_size_bytes{type, status, method, addr, isError}
  *
  * Gauge dependencyUp:
  *    dependency_up{name}
+ *
+ * Gauge applicationInfo:
+ *    application_info{version}
  * }
  * </pre>
  *
@@ -40,11 +43,13 @@ public enum MonitorMetrics {
     private static final String REQUESTS_SECONDS_METRIC_NAME = "request_seconds";
     private static final String RESPONSE_SIZE_METRIC_NAME = "response_size_bytes";
     private static final String DEPENDENCY_UP_METRIC_NAME = "dependency_up";
+    private static final String APPLICATION_INFO_METRIC_NAME = "application_info";
     private static double[] DEFAULT_BUCKETS = {0.1D, 0.3D, 1.5D, 10.5D};
 
     public Histogram requestSeconds;
     public Counter responseSize;
     public Gauge dependencyUp;
+    public Gauge applicationInfo;
 
     private DependencyCheckerExecutor dependencyCheckerExecutor = new DependencyCheckerExecutor();
 
@@ -54,9 +59,10 @@ public enum MonitorMetrics {
      * Initialize metric collectors
      *
      * @param collectJvmMetrics collect or not JVM metrics
+     * @param applicationVersion which version of your app handled the request
      * @param buckets the numbers of buckets
      */
-    public void init(boolean collectJvmMetrics, double... buckets) {
+    public void init(boolean collectJvmMetrics, String applicationVersion, double... buckets) {
         if (initialized) {
             throw new IllegalStateException("The MonitorMetrics instance has already been initialized. " +
                     "The MonitorMetrics.INSTANCE.init method must be executed only once");
@@ -67,19 +73,26 @@ public enum MonitorMetrics {
 
         requestSeconds = Histogram.build().name(REQUESTS_SECONDS_METRIC_NAME)
                 .help("records in a histogram the number of http requests and their duration in seconds")
-                .labelNames("type", "status", "method", "addr", "version", "isError")
+                .labelNames("type", "status", "method", "addr", "isError")
                 .buckets(buckets)
                 .register(collectorRegistry);
 
         responseSize = Counter.build().name(RESPONSE_SIZE_METRIC_NAME)
                 .help("counts the size of each http response")
-                .labelNames("type", "status", "method", "addr", "version", "isError")
+                .labelNames("type", "status", "method", "addr", "isError")
                 .register(collectorRegistry);
 
         dependencyUp = Gauge.build().name(DEPENDENCY_UP_METRIC_NAME)
                 .help("records if a dependency is up or down. 1 for up, 0 for down")
                 .labelNames("name")
                 .register(collectorRegistry);
+
+        applicationInfo = Gauge.build().name(APPLICATION_INFO_METRIC_NAME)
+                .help("static info of the application")
+                .labelNames("version")
+                .register(collectorRegistry);
+        // register the application version on application_info metric
+        applicationInfo.labels(applicationVersion).set(1);
 
         if (collectJvmMetrics) {
             DefaultExports.register(collectorRegistry);
@@ -96,13 +109,12 @@ public enum MonitorMetrics {
      * @param status the response status(e.g. response HTTP status code)
      * @param method the request method(e.g. HTTP methods GET, POST, PUT)
      * @param addr the requested endpoint address
-     * @param version which version of your app handled the request
      * @param isError if the status code reported is an error or not
      * @param elapsedSeconds how long time did the request has executed
      */
-    public void collectTime(String type, String status, String method, String addr, String version, boolean isError, double elapsedSeconds) {
+    public void collectTime(String type, String status, String method, String addr, boolean isError, double elapsedSeconds) {
         if (initialized) {
-            requestSeconds.labels(type, status, method, addr, version, Boolean.toString(isError))
+            requestSeconds.labels(type, status, method, addr, Boolean.toString(isError))
                     .observe(elapsedSeconds);
         }
     }
@@ -115,13 +127,12 @@ public enum MonitorMetrics {
      * @param status the response status(e.g. response HTTP status code)
      * @param method the request method(e.g. HTTP methods GET, POST, PUT)
      * @param addr the requested endpoint address
-     * @param version which version of your app handled the request
      * @param isError if the status code reported is an error or not
      * @param size the response content size
      */
-    public void collectSize(String type, String status, String method, String addr, String version, boolean isError, final long size) {
+    public void collectSize(String type, String status, String method, String addr, boolean isError, final long size) {
         if (initialized) {
-            MonitorMetrics.INSTANCE.responseSize.labels(type, status, method, addr, version, Boolean.toString(isError)).inc(size);
+            MonitorMetrics.INSTANCE.responseSize.labels(type, status, method, addr, Boolean.toString(isError)).inc(size);
         }
     }
 
