@@ -15,7 +15,7 @@ dependency_up{name}
 application_info{version}
 ```
 
-Metrics description:
+Details:
 
 1. The `request_seconds_bucket` metric defines the histogram of how many requests are falling into the well-defined buckets represented by the label `le`;
 
@@ -28,6 +28,20 @@ Metrics description:
 5. The `dependency_up` is a metric to register whether a specific dependency is up (1) or down (0). The label `name` registers the dependency name;
 
 6. The `application_info` holds static info of an application, such as it's semantic version number;
+
+Labels:
+
+1. `type` tells which request protocol was used (e.g. `grpc` or `http`);
+
+2. `status` registers the response HTTP status;
+
+3. `method` registers the request method;
+
+4. `addr` registers the requested endpoint address;
+
+5. `version` tells which version of your app handled the request;
+
+6. `isError` lets us know if the status code reported is an error or not;
 
 ## How to
 
