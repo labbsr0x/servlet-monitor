@@ -33,7 +33,7 @@ Labels:
 
 1. `type` tells which request protocol was used (e.g. `grpc` or `http`);
 
-2. `status` registers the response HTTP status;
+2. `status` registers the response status (e.g. HTTP status code);
 
 3. `method` registers the request method;
 
