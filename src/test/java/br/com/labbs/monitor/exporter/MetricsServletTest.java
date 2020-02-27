@@ -17,14 +17,16 @@ import java.io.StringWriter;
 
 public class MetricsServletTest {
 
-    @Before
-    public void clear(){
-        clearRegistry();
-    }
+    private MetricsServlet metricsServlet = new MetricsServlet();
 
     @AfterClass
     public static void clearRegistry() {
         MonitorMetrics.INSTANCE.collectorRegistry.clear();
+    }
+
+    @Before
+    public void clear() {
+        clearRegistry();
     }
 
     @Test
@@ -40,7 +42,7 @@ public class MetricsServletTest {
 
         Mockito.when(resp.getWriter()).thenReturn(writer);
 
-        new MetricsServlet().doGet(req, resp);
+        metricsServlet.doGet(req, resp);
 
         final String respBody = stringWriter.toString();
 
@@ -57,7 +59,7 @@ public class MetricsServletTest {
         Mockito.when(resp.getWriter()).thenReturn(writer);
         Gauge.build("a", "a help").register(MonitorMetrics.INSTANCE.collectorRegistry);
 
-        new MetricsServlet().doGet(req, resp);
+        metricsServlet.doGet(req, resp);
         Mockito.verify(writer).close();
     }
 
@@ -72,10 +74,37 @@ public class MetricsServletTest {
         Gauge.build("a", "a help").register(MonitorMetrics.INSTANCE.collectorRegistry);
 
         try {
-            new MetricsServlet().doGet(req, resp);
+            metricsServlet.doGet(req, resp);
             Assert.fail("Exception expected");
         } catch (Exception e) {
             Mockito.verify(writer).close();
         }
+    }
+
+    @Test
+    public void test_post_and_get_methods_must_return_the_same_content() throws IOException {
+        Gauge.build("a", "a help").register(MonitorMetrics.INSTANCE.collectorRegistry);
+        Gauge.build("b", "a help").register(MonitorMetrics.INSTANCE.collectorRegistry);
+        Gauge.build("c", "a help").register(MonitorMetrics.INSTANCE.collectorRegistry);
+
+        final HttpServletRequest reqGet = Mockito.mock(HttpServletRequest.class);
+        final HttpServletResponse respGet = Mockito.mock(HttpServletResponse.class);
+        final StringWriter stringWriterGet = new StringWriter();
+        final PrintWriter writerGet = new PrintWriter(stringWriterGet);
+        Mockito.when(respGet.getWriter()).thenReturn(writerGet);
+        metricsServlet.doGet(reqGet, respGet);
+
+        final String contentGet = stringWriterGet.toString();
+
+        final HttpServletRequest reqPost = Mockito.mock(HttpServletRequest.class);
+        final HttpServletResponse respPost = Mockito.mock(HttpServletResponse.class);
+        final StringWriter stringWriterPost = new StringWriter();
+        final PrintWriter writerPost = new PrintWriter(stringWriterPost);
+        Mockito.when(respPost.getWriter()).thenReturn(writerPost);
+        metricsServlet.doPost(reqPost, respPost);
+
+        final String contentPost = stringWriterPost.toString();
+
+        Assert.assertEquals(contentGet, contentPost);
     }
 }
