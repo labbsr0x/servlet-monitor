@@ -50,6 +50,7 @@ import java.util.Properties;
  */
 public class MetricsCollectorFilter implements Filter {
 
+    private static final String EXPORT_JVM_METRICS_PARAM = "export-jvm-metrics";
     private static final String BUCKET_CONFIG_PARAM = "buckets";
     private static final String PATH_DEPTH_PARAM = "path-depth";
     private static final String EXCLUSIONS = "exclusions";
@@ -65,6 +66,7 @@ public class MetricsCollectorFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) {
         double[] buckets = null;
+        boolean exportJvmMetrics = true;
         if (filterConfig != null) {
             String debugParam = filterConfig.getInitParameter(DEBUG);
             if (isNotEmpty(debugParam)) {
@@ -97,9 +99,14 @@ public class MetricsCollectorFilter implements Filter {
                     exclusions.add(string.trim());
                 }
             }
+            // Allow users to enable/disable the JVM metrics export
+            String exportJvmMetricsStr = filterConfig.getInitParameter(EXPORT_JVM_METRICS_PARAM);
+            if (isNotEmpty(exportJvmMetricsStr)) {
+                exportJvmMetrics = Boolean.parseBoolean(exportJvmMetricsStr);
+            }
         }
         String version = getApplicationVersionFromPropertiesFile();
-        MonitorMetrics.INSTANCE.init(true, version, buckets);
+        MonitorMetrics.INSTANCE.init(exportJvmMetrics, version, buckets);
     }
 
     /**

@@ -129,6 +129,19 @@ e.g. exclude paths starting with '/metrics' or '/static'
 </init-param>
 ```
 
+##### JVM metrics export
+
+It is possible to enable/disable the JVM metrics export.
+The export is enabled by default.
+
+e.g. disabling
+```xml
+<init-param>
+    <param-name>export-jvm-metrics</param-name>
+    <param-value>false</param-value>
+</init-param>
+```
+
 #### Setting application version
 
 ##### Manually
