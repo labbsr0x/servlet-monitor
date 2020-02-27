@@ -4,21 +4,32 @@ import java.io.PrintWriter;
 import java.util.Locale;
 
 /**
+ * A {@link PrintWriter} that counts the bytes written and provide methods to retrieve that amount.
  *
  * @author rogerio
  */
 public class CountingPrintWriter extends PrintWriter {
 
     private final int newLine = count(System.lineSeparator());
-    private long count;
     private final PrintWriter writer;
+    private long count;
 
+    /**
+     * Creates an instance of {@link CountingPrintWriter}
+     *
+     * @param writer {@link PrintWriter}
+     */
     public CountingPrintWriter(PrintWriter writer) {
         super(writer);
         this.writer = writer;
         DebugUtil.debug("CountingPrintWriter init");
     }
 
+    /**
+     * Returns the number of bytes written.
+     *
+     * @return amount of bytes written
+     */
     public long getCount() {
         return count;
     }

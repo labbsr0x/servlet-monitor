@@ -1,13 +1,11 @@
 package br.com.labbs.monitor.filter;
 
 /**
- *
  * @author rogerio
  */
 public class DebugUtil {
 
     private static boolean debug = false;
-
 
     public static void setDebug(boolean debug) {
         DebugUtil.debug = debug;
@@ -51,5 +49,5 @@ public class DebugUtil {
             debug(sb.toString());
         }
     }
-    
+
 }

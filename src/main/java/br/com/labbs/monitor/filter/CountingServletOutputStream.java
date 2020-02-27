@@ -5,6 +5,10 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * A {@link ServletOutputStream} that counts the bytes written in the response and provide
+ * methods to retrieve that amount.
+ */
 public class CountingServletOutputStream extends ServletOutputStream {
 
     private final CountingOutputStream output;
@@ -14,21 +18,38 @@ public class CountingServletOutputStream extends ServletOutputStream {
         DebugUtil.debug("CountingServletOutputStream init");
     }
 
+    /**
+     * {@inheritDoc}
+     * {@link ServletOutputStream#write(int)}
+     */
     @Override
     public void write(int b) throws IOException {
         output.write(b);
     }
 
+    /**
+     * {@inheritDoc}
+     * {@link ServletOutputStream#flush()}
+     */
     @Override
     public void flush() throws IOException {
         output.flush();
     }
 
+    /**
+     * {@inheritDoc}
+     * {@link ServletOutputStream#close()}
+     */
     @Override
     public void close() throws IOException {
         output.close();
     }
 
+    /**
+     * Returns the number of bytes written to the {@link ServletOutputStream}
+     *
+     * @return number of bytes written to the response
+     */
     public long getByteCount() {
         return output.getCount();
     }
@@ -54,7 +75,9 @@ public class CountingServletOutputStream extends ServletOutputStream {
             super(out);
         }
 
-        /** Returns the number of bytes written. */
+        /**
+         * Returns the number of bytes written.
+         */
         public long getCount() {
             return count;
         }

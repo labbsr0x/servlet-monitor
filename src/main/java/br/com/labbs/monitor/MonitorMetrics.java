@@ -38,13 +38,13 @@ public enum MonitorMetrics {
 
     INSTANCE;
 
-    public CollectorRegistry collectorRegistry = new CollectorRegistry(true);
-
     private static final String REQUESTS_SECONDS_METRIC_NAME = "request_seconds";
     private static final String RESPONSE_SIZE_METRIC_NAME = "response_size_bytes";
     private static final String DEPENDENCY_UP_METRIC_NAME = "dependency_up";
     private static final String APPLICATION_INFO_METRIC_NAME = "application_info";
     private static double[] DEFAULT_BUCKETS = {0.1D, 0.3D, 1.5D, 10.5D};
+
+    public CollectorRegistry collectorRegistry = new CollectorRegistry(true);
 
     public Histogram requestSeconds;
     public Counter responseSize;
@@ -58,9 +58,9 @@ public enum MonitorMetrics {
     /**
      * Initialize metric collectors
      *
-     * @param collectJvmMetrics collect or not JVM metrics
+     * @param collectJvmMetrics  collect or not JVM metrics
      * @param applicationVersion which version of your app handled the request
-     * @param buckets the numbers of buckets
+     * @param buckets            the numbers of buckets
      */
     public void init(boolean collectJvmMetrics, String applicationVersion, double... buckets) {
         if (initialized) {
@@ -102,14 +102,13 @@ public enum MonitorMetrics {
     }
 
     /**
-     *
      * Collect latency metric request_seconds
      *
-     * @param type which request protocol was used (e.g. grpc or http)
-     * @param status the response status(e.g. response HTTP status code)
-     * @param method the request method(e.g. HTTP methods GET, POST, PUT)
-     * @param addr the requested endpoint address
-     * @param isError if the status code reported is an error or not
+     * @param type           which request protocol was used (e.g. grpc or http)
+     * @param status         the response status(e.g. response HTTP status code)
+     * @param method         the request method(e.g. HTTP methods GET, POST, PUT)
+     * @param addr           the requested endpoint address
+     * @param isError        if the status code reported is an error or not
      * @param elapsedSeconds how long time did the request has executed
      */
     public void collectTime(String type, String status, String method, String addr, boolean isError, double elapsedSeconds) {
@@ -120,15 +119,14 @@ public enum MonitorMetrics {
     }
 
     /**
-     *
      * Collect size metric response_size_bytes
      *
-     * @param type which request protocol was used (e.g. grpc or http)
-     * @param status the response status(e.g. response HTTP status code)
-     * @param method the request method(e.g. HTTP methods GET, POST, PUT)
-     * @param addr the requested endpoint address
+     * @param type    which request protocol was used (e.g. grpc or http)
+     * @param status  the response status(e.g. response HTTP status code)
+     * @param method  the request method(e.g. HTTP methods GET, POST, PUT)
+     * @param addr    the requested endpoint address
      * @param isError if the status code reported is an error or not
-     * @param size the response content size
+     * @param size    the response content size
      */
     public void collectSize(String type, String status, String method, String addr, boolean isError, final long size) {
         if (initialized) {
@@ -139,7 +137,7 @@ public enum MonitorMetrics {
     /**
      * Cancel all scheduled dependency checkers and terminates the executor timer.
      */
-    public void cancelAllDependencyCheckers(){
+    public void cancelAllDependencyCheckers() {
         dependencyCheckerExecutor.cancelTasks();
     }
 
@@ -147,7 +145,7 @@ public enum MonitorMetrics {
      * Add dependency to be checked successive between the period
      *
      * @param checker dependency checker
-     * @param period time in milliseconds between successive task executions.
+     * @param period  time in milliseconds between successive task executions.
      */
     public void addDependencyChecker(final DependencyChecker checker, final long period) {
         TimerTask task = new TimerTask() {
@@ -163,5 +161,5 @@ public enum MonitorMetrics {
         };
         dependencyCheckerExecutor.schedule(task, period);
     }
- 
+
 }
