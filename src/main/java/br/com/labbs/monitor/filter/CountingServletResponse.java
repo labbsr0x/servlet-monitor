@@ -6,17 +6,30 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+/**
+ * A {@link HttpServletResponse} that counts the bytes written in the response and provide
+ * methods to retrieve that amount.
+ */
 public class CountingServletResponse extends HttpServletResponseWrapper {
 
+    private final HttpServletResponse response;
     private CountingServletOutputStream output;
     private CountingPrintWriter writer;
-    private final HttpServletResponse response;
 
-    CountingServletResponse(HttpServletResponse response) throws IOException {
+    /**
+     * Creates an instance of {@link CountingServletResponse} encapsulating the {@link HttpServletResponse}
+     *
+     * @param response response
+     */
+    CountingServletResponse(HttpServletResponse response) {
         super(response);
         this.response = response;
     }
 
+    /**
+     * {@inheritDoc}
+     * {@link HttpServletResponseWrapper#getOutputStream()}
+     */
     @Override
     public ServletOutputStream getOutputStream() throws IOException {
         if (output == null) {
@@ -25,6 +38,10 @@ public class CountingServletResponse extends HttpServletResponseWrapper {
         return output;
     }
 
+    /**
+     * {@inheritDoc}
+     * {@link HttpServletResponseWrapper#getWriter()}
+     */
     @Override
     public PrintWriter getWriter() throws IOException {
         if (writer == null) {
@@ -33,12 +50,21 @@ public class CountingServletResponse extends HttpServletResponseWrapper {
         return writer;
     }
 
+    /**
+     * {@inheritDoc}
+     * {@link HttpServletResponseWrapper#flushBuffer()}
+     */
     @Override
     public void flushBuffer() throws IOException {
         response.flushBuffer();
     }
 
-    long getByteCount() throws IOException {
+    /**
+     * Returns the number of bytes written to the response
+     *
+     * @return number of bytes written to the response
+     */
+    long getByteCount() {
         long count = 0;
         if (output != null) {
             count = output.getByteCount();
@@ -48,6 +74,12 @@ public class CountingServletResponse extends HttpServletResponseWrapper {
         return count;
     }
 
+    /**
+     * Returns the range of status code.
+     * The first digit of the status code followed by XX suffix.
+     *
+     * @return status code range
+     */
     String getStatusRange() {
         int n = this.getStatus() / 100;
         return n + "xx";

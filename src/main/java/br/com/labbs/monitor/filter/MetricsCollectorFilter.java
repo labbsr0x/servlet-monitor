@@ -32,10 +32,10 @@ import java.util.Properties;
  * <pre>{@code
  * <filter>
  *   <filter-name>metricsFilter</filter-name>
- *   <filter-class>br.com.labbs.monitor.filter.MetricsFilter</filter-class>
+ *   <filter-class>br.com.labbs.monitor.filter.MetricsCollectorFilter</filter-class>
  *   <init-param>
  *      <param-name>buckets</param-name>
- *      <param-value>0.005,0.05,0.1,0.5,1,2.5,5,7.5</param-value>
+ *      <param-value>>0.1,0.3,2,10</param-value>
  *   </init-param>
  * </filter>
  * <filter-mapping>
@@ -43,6 +43,8 @@ import java.util.Properties;
  *   <url-pattern>/*</url-pattern>
  * </filter-mapping>
  * }</pre>
+ * <p>
+ * See the <a href="https://github.com/labbsr0x/servlet-monitor">documentation</a> to learn how to use this filter.
  *
  * @author Werberson Silva &lt;werberson.silva@gmail.com&gt;
  */
@@ -56,6 +58,10 @@ public class MetricsCollectorFilter implements Filter {
 
     private int pathDepth = 0;
 
+    /**
+     * {@inheritDoc}
+     * {@link Filter#init(FilterConfig)}
+     */
     @Override
     public void init(FilterConfig filterConfig) {
         double[] buckets = null;
@@ -96,6 +102,10 @@ public class MetricsCollectorFilter implements Filter {
         MonitorMetrics.INSTANCE.init(true, version, buckets);
     }
 
+    /**
+     * {@inheritDoc}
+     * {@link Filter#doFilter(ServletRequest, ServletResponse, FilterChain)}
+     */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         if (!(request instanceof HttpServletRequest) || !(response instanceof HttpServletResponse)) {
@@ -122,11 +132,22 @@ public class MetricsCollectorFilter implements Filter {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * {@link Filter#destroy()}
+     */
     @Override
     public void destroy() {
         //ignored
     }
 
+    /**
+     * Checks whether the path is configured to be ignored from the metrics collection.
+     *
+     * @param httpRequest request
+     * @param path        HTTP request path
+     * @return <code>true</code> if the path is configured to be excluded.
+     */
     private boolean isExcludedPath(final HttpServletRequest httpRequest, String path) {
         if (path.startsWith(httpRequest.getContextPath())) {
             path = path.substring(httpRequest.getContextPath().length());
@@ -140,7 +161,15 @@ public class MetricsCollectorFilter implements Filter {
         return false;
     }
 
-    private void collect(HttpServletRequest httpRequest, CountingServletResponse counterResponse, String path, double elapsedSeconds) throws IOException {
+    /**
+     * Collect metrics
+     *
+     * @param httpRequest     request
+     * @param counterResponse response
+     * @param path            path
+     * @param elapsedSeconds  how long time did the request has executed
+     */
+    private void collect(HttpServletRequest httpRequest, CountingServletResponse counterResponse, String path, double elapsedSeconds) {
         final String method = httpRequest.getMethod();
         final String status = Integer.toString(counterResponse.getStatus());
         final boolean isError = isErrorStatus(counterResponse.getStatus());
@@ -151,14 +180,33 @@ public class MetricsCollectorFilter implements Filter {
         MonitorMetrics.INSTANCE.collectSize(scheme, status, method, path, isError, count);
     }
 
+    /**
+     * Checks if the parameters is a HTTP status code error
+     *
+     * @param status HTTP status code
+     * @return <code>true</code> if the status code is lower than 200 or greater than or equals 400
+     */
     private boolean isErrorStatus(int status) {
         return status < 200 || status >= 400;
     }
 
+    /**
+     * Checks if a {@link String} is empty
+     *
+     * @param s {@link String} to be checked
+     * @return <code>true</code> if the String is empty
+     */
     private boolean isNotEmpty(String s) {
         return s != null && s.trim().length() != 0;
     }
 
+    /**
+     * Returns a substring of the <code>path</code> based on depth count of slash char "/".
+     *
+     * @param path      HTTP request path
+     * @param pathDepth how many slash "/" to be include on substring. anything less than 1 means full granularity.
+     * @return substring
+     */
     private String substringMaxDepth(String path, int pathDepth) {
         if (path == null || pathDepth < 1) {
             return path;
@@ -180,12 +228,21 @@ public class MetricsCollectorFilter implements Filter {
         return path.substring(0, i);
     }
 
+    /**
+     * Reads the file "application.properties" located in resource folder and return the "application.version"
+     * property value.
+     * If the file not exists, {@link String} "unknown" will be returned.
+     * If an error occurs while reading the file, {@link String} "error-reading-version" will be returned.
+     *
+     * @return value read from the file or "unknown" when file not exist or "error-reading-version" when error occurs.
+     */
     private String getApplicationVersionFromPropertiesFile() {
         try {
             final Properties p = new Properties();
             final InputStream is = getClass().getResourceAsStream("/application.properties");
             if (is != null) {
                 p.load(is);
+                //TODO check property existence
                 return p.getProperty("application.version");
             }
             return "unknown";
