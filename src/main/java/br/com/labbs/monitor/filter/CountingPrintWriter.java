@@ -10,7 +10,7 @@ import java.util.Locale;
  */
 public class CountingPrintWriter extends PrintWriter {
 
-    private final int newLine = count(System.lineSeparator());
+    private final int newLine = count(System.getProperty("line.separator"));
     private final PrintWriter writer;
     private long count;
 
