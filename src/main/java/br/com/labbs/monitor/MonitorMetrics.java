@@ -40,6 +40,7 @@ public enum MonitorMetrics {
 
     private static final String REQUESTS_SECONDS_METRIC_NAME = "request_seconds";
     private static final String RESPONSE_SIZE_METRIC_NAME = "response_size_bytes";
+    private static final String DEPENDENCY_REQUESTS_SECONDS_METRIC_NAME ="dependency_request_seconds";
     private static final String DEPENDENCY_UP_METRIC_NAME = "dependency_up";
     private static final String APPLICATION_INFO_METRIC_NAME = "application_info";
     private static double[] DEFAULT_BUCKETS = {0.1D, 0.3D, 1.5D, 10.5D};
@@ -48,6 +49,7 @@ public enum MonitorMetrics {
 
     public Histogram requestSeconds;
     public Counter responseSize;
+    public Histogram dependencyRequestSeconds;
     public Gauge dependencyUp;
     public Gauge applicationInfo;
 
@@ -81,6 +83,11 @@ public enum MonitorMetrics {
                 .help("counts the size of each http response")
                 .labelNames("type", "status", "method", "addr", "isError")
                 .register(collectorRegistry);
+        
+        dependencyRequestSeconds = Histogram.build().name(DEPENDENCY_REQUESTS_SECONDS_METRIC_NAME)
+        		.help("records in a histogram the number of http requests of a dependency and their duration in seconds")
+        		.labelNames("type", "status", "method", "addr", "isError")
+        		.register(collectorRegistry);
 
         dependencyUp = Gauge.build().name(DEPENDENCY_UP_METRIC_NAME)
                 .help("records if a dependency is up or down. 1 for up, 0 for down")
@@ -162,4 +169,7 @@ public enum MonitorMetrics {
         dependencyCheckerExecutor.schedule(task, period);
     }
 
+    public void addCustomMetric() {
+    	System.out.println("Adding custom metric");
+    }
 }
