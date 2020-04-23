@@ -86,7 +86,8 @@ public enum MonitorMetrics {
         
         dependencyRequestSeconds = Histogram.build().name(DEPENDENCY_REQUESTS_SECONDS_METRIC_NAME)
         		.help("records in a histogram the number of http requests of a dependency and their duration in seconds")
-        		.labelNames("type", "status", "method", "addr", "isError")
+        		.labelNames("name", "type", "status", "method", "addr", "isError")
+        		.buckets(buckets)
         		.register(collectorRegistry);
 
         dependencyUp = Gauge.build().name(DEPENDENCY_UP_METRIC_NAME)
@@ -140,6 +141,13 @@ public enum MonitorMetrics {
             MonitorMetrics.INSTANCE.responseSize.labels(type, status, method, addr, Boolean.toString(isError)).inc(size);
         }
     }
+    
+    public void collectDependencyTime(String name, String type, String status, String method, String addr, boolean isError, double elapsedSeconds) {
+    	if(initialized) {
+    		dependencyRequestSeconds.labels(name, type, status, method, addr, Boolean.toString(isError))
+    			.observe(elapsedSeconds);
+    	}
+    }
 
     /**
      * Cancel all scheduled dependency checkers and terminates the executor timer.
@@ -170,6 +178,6 @@ public enum MonitorMetrics {
     }
 
     public void addCustomMetric() {
-    	System.out.println("Adding custom metric");
+    	collectDependencyTime("iib", "iib", "2xx", "/gto", "/gto", false, 1.12);
     }
 }
