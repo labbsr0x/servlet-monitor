@@ -86,7 +86,7 @@ public enum MonitorMetrics {
         
         dependencyRequestSeconds = Histogram.build().name(DEPENDENCY_REQUESTS_SECONDS_METRIC_NAME)
         		.help("records in a histogram the number of http requests of a dependency and their duration in seconds")
-        		.labelNames("name", "type", "status", "method", "addr", "isError")
+        		.labelNames("name", "type", "status", "method", "addr", "isError", "errorMessage")
         		.buckets(buckets)
         		.register(collectorRegistry);
 
@@ -142,9 +142,9 @@ public enum MonitorMetrics {
         }
     }
     
-    public void collectDependencyTime(String name, String type, String status, String method, String addr, boolean isError, double elapsedSeconds) {
+    public void collectDependencyTime(String name, String type, String status, String method, String addr, boolean isError, String errorMessage, double elapsedSeconds) {
     	if(initialized) {
-    		dependencyRequestSeconds.labels(name, type, status, method, addr, Boolean.toString(isError))
+    		dependencyRequestSeconds.labels(name, type, status, method, addr, Boolean.toString(isError), errorMessage)
     			.observe(elapsedSeconds);
     	}
     }
@@ -177,7 +177,7 @@ public enum MonitorMetrics {
         dependencyCheckerExecutor.schedule(task, period);
     }
 
-    public void addCustomMetric() {
-    	collectDependencyTime("iib", "iib", "2xx", "/gto", "/gto", false, 1.12);
+    public void addCustomHistogramMetric(String name, String type, String status, String method, String addr, boolean isError, String errorMessage, double elapsedSeconds) {
+    	collectDependencyTime(name, type, status, method, addr, isError, errorMessage, elapsedSeconds);
     }
 }
