@@ -142,6 +142,18 @@ public enum MonitorMetrics {
         }
     }
     
+    /**
+     * Collect latency metric dependency_request_seconds
+     *
+     * @param name			 the name of the dependency
+     * @param type           which request protocol was used (e.g. grpc or http)
+     * @param status         the response status(e.g. response HTTP status code)
+     * @param method         the request method(e.g. HTTP methods GET, POST, PUT)
+     * @param addr           the requested endpoint address
+     * @param isError        if the status code reported is an error or not
+     * @param errorMessage	 the error message of a request
+     * @param elapsedSeconds how long time did the request has executed
+     */
     public void collectDependencyTime(String name, String type, String status, String method, String addr, boolean isError, String errorMessage, double elapsedSeconds) {
     	if(initialized) {
     		dependencyRequestSeconds.labels(name, type, status, method, addr, Boolean.toString(isError), errorMessage)
@@ -177,7 +189,23 @@ public enum MonitorMetrics {
         dependencyCheckerExecutor.schedule(task, period);
     }
 
-    public void addCustomHistogramMetric(String name, String type, String status, String method, String addr, boolean isError, String errorMessage, double elapsedSeconds) {
+    /**
+     * Add a dependency event to be monitored
+     *
+     * @param name			 the name of the dependency
+     * @param type           which request protocol was used (e.g. grpc or http)
+     * @param status         the response status(e.g. response HTTP status code)
+     * @param method         the request method(e.g. HTTP methods GET, POST, PUT)
+     * @param addr           the requested endpoint address
+     * @param isError        if the status code reported is an error or not
+     * @param errorMessage	 the error message of a request
+     * @param elapsedSeconds how long time did the request has executed
+     */
+    public void addDependencyEvent(String name, String type, String status, String method, String addr, boolean isError, String errorMessage, double elapsedSeconds) {
+    	if (elapsedSeconds <= 0) {
+    		//skipping, elapsed seconds cannot be minor than zero
+    		return;
+    	}
     	collectDependencyTime(name, type, status, method, addr, isError, errorMessage, elapsedSeconds);
     }
 }
