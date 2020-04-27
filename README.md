@@ -12,6 +12,9 @@ request_seconds_count{type, status, isError, method, addr}
 request_seconds_sum{type, status, isError, method, addr}
 response_size_bytes{type, status, isError, method, addr}
 dependency_up{name}
+dependency_request_seconds_bucket{name, type, status, isError, errorMessage, method, addr, le}
+dependency_request_seconds_count{name, type, status, isError, errorMessage, method, add}
+dependency_request_seconds_sum{name, type, status, isError, errorMessage, method, add}
 application_info{version}
 ```
 
@@ -27,7 +30,13 @@ Details:
 
 5. The `dependency_up` is a metric to register whether a specific dependency is up (1) or down (0). The label `name` registers the dependency name;
 
-6. The `application_info` holds static info of an application, such as it's semantic version number;
+6. The `dependency_request_seconds_bucket` is a metric that defines the histogram of how many requests to a specific dependency are falling into the well defined buckets represented by the label le;
+
+7. The `dependency_request_seconds_count` is a counter that counts the overall number of requests to a specific dependency;
+
+8. The `dependency_request_seconds_sum` is a counter that counts the overall sum of how long requests to a specific dependency are taking;
+
+9. The `application_info` holds static info of an application, such as it's semantic version number;
 
 Labels:
 
@@ -42,6 +51,10 @@ Labels:
 5. `version` tells which version of your app handled the request;
 
 6. `isError` lets us know if the status code reported is an error or not;
+
+7. `errorMessage` registers the error message;
+
+8. `name` registers the name of the dependency;
 
 ## How to
 
@@ -220,6 +233,12 @@ MonitorMetrics.INSTANCE.addDependencyChecker(fakeChecker, periodIntervalInMillis
 
 > :warning: **NOTE**: 
 > The dependency checkers will run on a new thread, to prevent memory leak, make sure to call the method ``MonitorMetrics.INSTANCE.cancelAllDependencyCheckers()`` on undeploying/terminating the web app. 
+
+You also can monitore a dependency event. Just call `addDependencyEvent` and pass the right params.
+
+```java
+MonitorMetrics.INSTANCE.addDependencyEvent(name, type, status, method, address, isError, errorMessage, elapsedSeconds);
+```
 
 ## Big Brother
 
