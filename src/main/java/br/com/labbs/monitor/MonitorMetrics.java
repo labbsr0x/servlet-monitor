@@ -85,7 +85,7 @@ public enum MonitorMetrics {
                 .register(collectorRegistry);
         
         dependencyRequestSeconds = Histogram.build().name(DEPENDENCY_REQUESTS_SECONDS_METRIC_NAME)
-        		.help("records in a histogram the number of http requests of a dependency and their duration in seconds")
+        		.help("records in a histogram the number of requests of a dependency and their duration in seconds")
         		.labelNames("name", "type", "status", "method", "addr", "isError", "errorMessage")
         		.buckets(buckets)
         		.register(collectorRegistry);
@@ -193,13 +193,13 @@ public enum MonitorMetrics {
      * Add a dependency event to be monitored
      *
      * @param name			 the name of the dependency
-     * @param type           which request protocol was used (e.g. grpc or http)
+     * @param type           which request protocol was used (e.g. http, grpc, etc)
      * @param status         the response status(e.g. response HTTP status code)
      * @param method         the request method(e.g. HTTP methods GET, POST, PUT)
      * @param addr           the requested endpoint address
      * @param isError        if the status code reported is an error or not
      * @param errorMessage	 the error message of a request
-     * @param elapsedSeconds how long time did the request has executed
+     * @param elapsedSeconds how long the request lasted in seconds
      */
     public void addDependencyEvent(String name, String type, String status, String method, String addr, boolean isError, String errorMessage, double elapsedSeconds) {
     	if (elapsedSeconds <= 0) {
