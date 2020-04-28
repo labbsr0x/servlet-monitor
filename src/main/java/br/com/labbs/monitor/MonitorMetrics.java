@@ -75,13 +75,13 @@ public enum MonitorMetrics {
 
         requestSeconds = Histogram.build().name(REQUESTS_SECONDS_METRIC_NAME)
                 .help("records in a histogram the number of http requests and their duration in seconds")
-                .labelNames("type", "status", "method", "addr", "isError")
+                .labelNames("type", "status", "method", "addr", "isError", "errorMessage")
                 .buckets(buckets)
                 .register(collectorRegistry);
 
         responseSize = Counter.build().name(RESPONSE_SIZE_METRIC_NAME)
                 .help("counts the size of each http response")
-                .labelNames("type", "status", "method", "addr", "isError")
+                .labelNames("type", "status", "method", "addr", "isError", "errorMessage")
                 .register(collectorRegistry);
         
         dependencyRequestSeconds = Histogram.build().name(DEPENDENCY_REQUESTS_SECONDS_METRIC_NAME)
@@ -117,11 +117,12 @@ public enum MonitorMetrics {
      * @param method         the request method(e.g. HTTP methods GET, POST, PUT)
      * @param addr           the requested endpoint address
      * @param isError        if the status code reported is an error or not
+     * @param errorMessage   the error message from a request with error
      * @param elapsedSeconds how long time did the request has executed
      */
-    public void collectTime(String type, String status, String method, String addr, boolean isError, double elapsedSeconds) {
+    public void collectTime(String type, String status, String method, String addr, boolean isError, String errorMessage, double elapsedSeconds) {
         if (initialized) {
-            requestSeconds.labels(type, status, method, addr, Boolean.toString(isError))
+            requestSeconds.labels(type, status, method, addr, Boolean.toString(isError), errorMessage)
                     .observe(elapsedSeconds);
         }
     }
@@ -134,11 +135,13 @@ public enum MonitorMetrics {
      * @param method  the request method(e.g. HTTP methods GET, POST, PUT)
      * @param addr    the requested endpoint address
      * @param isError if the status code reported is an error or not
+     * @param errorMessage   the error message from a request with error
      * @param size    the response content size
      */
-    public void collectSize(String type, String status, String method, String addr, boolean isError, final long size) {
+    public void collectSize(String type, String status, String method, String addr, boolean isError, String errorMessage, final long size) {
         if (initialized) {
-            MonitorMetrics.INSTANCE.responseSize.labels(type, status, method, addr, Boolean.toString(isError)).inc(size);
+            MonitorMetrics.INSTANCE.responseSize.labels(type, status, method, addr, Boolean.toString(isError), errorMessage)
+            	.inc(size);
         }
     }
     

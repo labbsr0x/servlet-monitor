@@ -184,14 +184,12 @@ public class MetricsCollectorFilter implements Filter {
     	final String method = httpRequest.getMethod();
         final String status = Integer.toString(counterResponse.getStatus());
         final boolean isError = isErrorStatus(counterResponse.getStatus());
-        if (isError) {
-        	System.out.println(httpRequest.getAttribute(errorMessageParam));
-        }
+        final String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
         final long count = counterResponse.getByteCount();
         final String scheme = httpRequest.getScheme();
         DebugUtil.debug(path, " ; bytes count = ", count);
-        MonitorMetrics.INSTANCE.collectTime(scheme, status, method, path, isError, elapsedSeconds);
-        MonitorMetrics.INSTANCE.collectSize(scheme, status, method, path, isError, count);
+        MonitorMetrics.INSTANCE.collectTime(scheme, status, method, path, isError, errorMessage, elapsedSeconds);
+        MonitorMetrics.INSTANCE.collectSize(scheme, status, method, path, isError, errorMessage, count);
     }
 
     /**
