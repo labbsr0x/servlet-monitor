@@ -110,6 +110,7 @@ public class MetricsCollectorFilter implements Filter {
         String version = getApplicationVersionFromPropertiesFile();
         // Allow users to capture error messages
         errorMessageParam = filterConfig.getInitParameter(ERROR_MESSAGE_PARAM);
+        
         MonitorMetrics.INSTANCE.init(exportJvmMetrics, version, buckets);
     }
 
@@ -210,6 +211,9 @@ public class MetricsCollectorFilter implements Filter {
      * @return string with the error message or empty string if error message not found.
      */
     private String getErrorMessage(HttpServletRequest httpRequest) {
+    	if (errorMessageParam == null) {
+    		return "";
+    	}
     	String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
     	if (errorMessage == null) {
     		return "";
