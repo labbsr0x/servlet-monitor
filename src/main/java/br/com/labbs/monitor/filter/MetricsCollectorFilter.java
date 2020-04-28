@@ -184,7 +184,7 @@ public class MetricsCollectorFilter implements Filter {
     	final String method = httpRequest.getMethod();
         final String status = Integer.toString(counterResponse.getStatus());
         final boolean isError = isErrorStatus(counterResponse.getStatus());
-        final String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
+        final String errorMessage = getErrorMessage(httpRequest);
         final long count = counterResponse.getByteCount();
         final String scheme = httpRequest.getScheme();
         DebugUtil.debug(path, " ; bytes count = ", count);
@@ -200,6 +200,22 @@ public class MetricsCollectorFilter implements Filter {
      */
     private boolean isErrorStatus(int status) {
         return status < 200 || status >= 400;
+    }
+    
+    /**
+     * Get the error message from a request. 
+     * If error message is null, sets the string to empty string.
+     * 
+     * @param httpRequest request
+     * @return string with the error message or empty string if error message not found.
+     */
+    private String getErrorMessage(HttpServletRequest httpRequest) {
+    	String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
+    	if (errorMessage == null) {
+    		return "";
+    	}
+    	
+    	return errorMessage;
     }
 
     /**
