@@ -7,10 +7,10 @@ A Servlet filter to add basic but very useful [Prometheus](https://prometheus.io
 The only exposed metrics are the following:
 
 ```
-request_seconds_bucket{type, status, isError, method, addr, le}
-request_seconds_count{type, status, isError, method, addr}
-request_seconds_sum{type, status, isError, method, addr}
-response_size_bytes{type, status, isError, method, addr}
+request_seconds_bucket{type, status, isError, errorMessage, method, addr, le}
+request_seconds_count{type, status, isError, errorMessage, method, addr}
+request_seconds_sum{type, status, isError, errorMessage, method, addr}
+response_size_bytes{type, status, isError, errorMessage, method, addr}
 dependency_up{name}
 dependency_request_seconds_bucket{name, type, status, isError, errorMessage, method, addr, le}
 dependency_request_seconds_count{name, type, status, isError, errorMessage, method, add}
@@ -153,6 +153,25 @@ e.g. disabling
     <param-name>export-jvm-metrics</param-name>
     <param-value>false</param-value>
 </init-param>
+```
+
+##### Capture error messages
+
+It is possible to capture error messages that were saved using `HttpServletRequest.setAttribute`. The `error-message` init param must be configured to get the name of the attribute.
+
+e.g capture error messages from requests with attribute name equals to 'error-info'
+
+```xml
+<init-param>
+    <param-name>error-message</param-name>
+    <param-value>error-info</param-value>
+</init-param>
+```
+
+Your java code should look like this:
+
+```java
+req.setAttribute("error-info", "Page not found");
 ```
 
 #### Setting application version
