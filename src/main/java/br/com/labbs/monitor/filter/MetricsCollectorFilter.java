@@ -54,10 +54,12 @@ public class MetricsCollectorFilter implements Filter {
     private static final String BUCKET_CONFIG_PARAM = "buckets";
     private static final String PATH_DEPTH_PARAM = "path-depth";
     private static final String EXCLUSIONS = "exclusions";
+    private static final String ERROR_MESSAGE_PARAM = "error-message";
     private static final String DEBUG = "debug";
     private final List<String> exclusions = new ArrayList<String>();
 
     private int pathDepth = 0;
+    private String errorMessageParam = "";
 
     /**
      * {@inheritDoc}
@@ -106,6 +108,8 @@ public class MetricsCollectorFilter implements Filter {
             }
         }
         String version = getApplicationVersionFromPropertiesFile();
+        // Allow users to capture error messages
+        errorMessageParam = filterConfig.getInitParameter(ERROR_MESSAGE_PARAM);
         MonitorMetrics.INSTANCE.init(exportJvmMetrics, version, buckets);
     }
 
@@ -177,9 +181,12 @@ public class MetricsCollectorFilter implements Filter {
      * @param elapsedSeconds  how long time did the request has executed
      */
     private void collect(HttpServletRequest httpRequest, CountingServletResponse counterResponse, String path, double elapsedSeconds) {
-        final String method = httpRequest.getMethod();
+    	final String method = httpRequest.getMethod();
         final String status = Integer.toString(counterResponse.getStatus());
         final boolean isError = isErrorStatus(counterResponse.getStatus());
+        if (isError) {
+        	System.out.println(httpRequest.getAttribute(errorMessageParam));
+        }
         final long count = counterResponse.getByteCount();
         final String scheme = httpRequest.getScheme();
         DebugUtil.debug(path, " ; bytes count = ", count);
