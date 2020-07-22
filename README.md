@@ -7,16 +7,18 @@ A Servlet filter to add basic but very useful [Prometheus](https://prometheus.io
 The only exposed metrics are the following:
 
 ```
-request_seconds_bucket{type,status, method, addr, version, isError, le}
-request_seconds_count{type, status, method, addr, version, isError}
-request_seconds_sum{type, status, method, addr, version, isError}
-response_size_bytes{type, status, method, addr, version, isError} 
+request_seconds_bucket{type, status, isError, errorMessage, method, addr, le}
+request_seconds_count{type, status, isError, errorMessage, method, addr}
+request_seconds_sum{type, status, isError, errorMessage, method, addr}
+response_size_bytes{type, status, isError, errorMessage, method, addr}
 dependency_up{name}
+dependency_request_seconds_bucket{name, type, status, isError, errorMessage, method, addr, le}
+dependency_request_seconds_count{name, type, status, isError, errorMessage, method, add}
+dependency_request_seconds_sum{name, type, status, isError, errorMessage, method, add}
+application_info{version}
 ```
 
-Where, for a specific request, `type` tells which request protocol was used (e.g. `grpc` or `http`), `status` registers the response HTTP status, `method` registers the request method, `addr` registers the requested endpoint address, `version` tells which version of your app handled the request and `isError` lets us know if the status code reported is an error or not.
-
-In detail:
+Details:
 
 1. The `request_seconds_bucket` metric defines the histogram of how many requests are falling into the well-defined buckets represented by the label `le`;
 
@@ -26,7 +28,33 @@ In detail:
 
 4. The `response_size_bytes` is a counter that computes how much data is being sent back to the user for a given request type. It captures the response size from the `content-length` response header. If there is no such header, the value exposed as metric will be zero;
 
-5. Finally, `dependency_up` is a metric to register whether a specific dependency is up (1) or down (0). The label `name` registers the dependency name;
+5. The `dependency_up` is a metric to register whether a specific dependency is up (1) or down (0). The label `name` registers the dependency name;
+
+6. The `dependency_request_seconds_bucket` is a metric that defines the histogram of how many requests to a specific dependency are falling into the well defined buckets represented by the label le;
+
+7. The `dependency_request_seconds_count` is a counter that counts the overall number of requests to a specific dependency;
+
+8. The `dependency_request_seconds_sum` is a counter that counts the overall sum of how long requests to a specific dependency are taking;
+
+9. The `application_info` holds static info of an application, such as it's semantic version number;
+
+Labels:
+
+1. `type` tells which request protocol was used (e.g. `grpc` or `http`);
+
+2. `status` registers the response status (e.g. HTTP status code);
+
+3. `method` registers the request method;
+
+4. `addr` registers the requested endpoint address;
+
+5. `version` tells which version of your app handled the request;
+
+6. `isError` lets us know if the status code reported is an error or not;
+
+7. `errorMessage` registers the error message;
+
+8. `name` registers the name of the dependency;
 
 ## How to
 
@@ -114,6 +142,38 @@ e.g. exclude paths starting with '/metrics' or '/static'
 </init-param>
 ```
 
+##### JVM metrics export
+
+It is possible to enable/disable the JVM metrics export.
+The export is enabled by default.
+
+e.g. disabling
+```xml
+<init-param>
+    <param-name>export-jvm-metrics</param-name>
+    <param-value>false</param-value>
+</init-param>
+```
+
+##### Capture error messages
+
+It is possible to capture error messages that were saved using `HttpServletRequest.setAttribute`. The `error-message` init param must be configured to get the name of the attribute.
+
+e.g capture error messages from requests with attribute name equals to 'error-info'
+
+```xml
+<init-param>
+    <param-name>error-message</param-name>
+    <param-value>error-info</param-value>
+</init-param>
+```
+
+Your java code should look like this:
+
+```java
+req.setAttribute("error-info", "Page not found");
+```
+
 #### Setting application version
 
 ##### Manually
@@ -192,6 +252,12 @@ MonitorMetrics.INSTANCE.addDependencyChecker(fakeChecker, periodIntervalInMillis
 
 > :warning: **NOTE**: 
 > The dependency checkers will run on a new thread, to prevent memory leak, make sure to call the method ``MonitorMetrics.INSTANCE.cancelAllDependencyCheckers()`` on undeploying/terminating the web app. 
+
+You also can monitore a dependency event. Just call `addDependencyEvent` and pass the right params.
+
+```java
+MonitorMetrics.INSTANCE.addDependencyEvent(name, type, status, method, address, isError, errorMessage, elapsedSeconds);
+```
 
 ## Big Brother
 

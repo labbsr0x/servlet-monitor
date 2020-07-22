@@ -3,7 +3,13 @@ package br.com.labbs.monitor.filter;
 import br.com.labbs.monitor.MonitorMetrics;
 import io.prometheus.client.SimpleTimer;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -26,10 +32,10 @@ import java.util.Properties;
  * <pre>{@code
  * <filter>
  *   <filter-name>metricsFilter</filter-name>
- *   <filter-class>br.com.labbs.monitor.filter.MetricsFilter</filter-class>
+ *   <filter-class>br.com.labbs.monitor.filter.MetricsCollectorFilter</filter-class>
  *   <init-param>
  *      <param-name>buckets</param-name>
- *      <param-value>0.005,0.05,0.1,0.5,1,2.5,5,7.5</param-value>
+ *      <param-value>>0.1,0.3,2,10</param-value>
  *   </init-param>
  * </filter>
  * <filter-mapping>
@@ -37,26 +43,32 @@ import java.util.Properties;
  *   <url-pattern>/*</url-pattern>
  * </filter-mapping>
  * }</pre>
+ * <p>
+ * See the <a href="https://github.com/labbsr0x/servlet-monitor">documentation</a> to learn how to use this filter.
  *
  * @author Werberson Silva &lt;werberson.silva@gmail.com&gt;
  */
 public class MetricsCollectorFilter implements Filter {
 
+    private static final String EXPORT_JVM_METRICS_PARAM = "export-jvm-metrics";
     private static final String BUCKET_CONFIG_PARAM = "buckets";
     private static final String PATH_DEPTH_PARAM = "path-depth";
     private static final String EXCLUSIONS = "exclusions";
+    private static final String ERROR_MESSAGE_PARAM = "error-message";
     private static final String DEBUG = "debug";
     private final List<String> exclusions = new ArrayList<String>();
 
     private int pathDepth = 0;
-    private String version;
+    private String errorMessageParam = "";
 
+    /**
+     * {@inheritDoc}
+     * {@link Filter#init(FilterConfig)}
+     */
     @Override
     public void init(FilterConfig filterConfig) {
-
-        this.version = getApplicationVersionFromPropertiesFile();
-
         double[] buckets = null;
+        boolean exportJvmMetrics = true;
         if (filterConfig != null) {
             String debugParam = filterConfig.getInitParameter(DEBUG);
             if (isNotEmpty(debugParam)) {
@@ -89,10 +101,23 @@ public class MetricsCollectorFilter implements Filter {
                     exclusions.add(string.trim());
                 }
             }
+            // Allow users to enable/disable the JVM metrics export
+            String exportJvmMetricsStr = filterConfig.getInitParameter(EXPORT_JVM_METRICS_PARAM);
+            if (isNotEmpty(exportJvmMetricsStr)) {
+                exportJvmMetrics = Boolean.parseBoolean(exportJvmMetricsStr);
+            }
         }
-        MonitorMetrics.INSTANCE.init(true, buckets);
+        String version = getApplicationVersionFromPropertiesFile();
+        // Allow users to capture error messages
+        errorMessageParam = filterConfig.getInitParameter(ERROR_MESSAGE_PARAM);
+        
+        MonitorMetrics.INSTANCE.init(exportJvmMetrics, version, buckets);
     }
 
+    /**
+     * {@inheritDoc}
+     * {@link Filter#doFilter(ServletRequest, ServletResponse, FilterChain)}
+     */
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         if (!(request instanceof HttpServletRequest) || !(response instanceof HttpServletResponse)) {
@@ -119,11 +144,22 @@ public class MetricsCollectorFilter implements Filter {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * {@link Filter#destroy()}
+     */
     @Override
     public void destroy() {
         //ignored
     }
 
+    /**
+     * Checks whether the path is configured to be ignored from the metrics collection.
+     *
+     * @param httpRequest request
+     * @param path        HTTP request path
+     * @return <code>true</code> if the path is configured to be excluded.
+     */
     private boolean isExcludedPath(final HttpServletRequest httpRequest, String path) {
         if (path.startsWith(httpRequest.getContextPath())) {
             path = path.substring(httpRequest.getContextPath().length());
@@ -137,25 +173,72 @@ public class MetricsCollectorFilter implements Filter {
         return false;
     }
 
-    private void collect(HttpServletRequest httpRequest, CountingServletResponse counterResponse, String path, double elapsedSeconds) throws IOException {
-        final String method = httpRequest.getMethod();
+    /**
+     * Collect metrics
+     *
+     * @param httpRequest     request
+     * @param counterResponse response
+     * @param path            path
+     * @param elapsedSeconds  how long time did the request has executed
+     */
+    private void collect(HttpServletRequest httpRequest, CountingServletResponse counterResponse, String path, double elapsedSeconds) {
+    	final String method = httpRequest.getMethod();
         final String status = Integer.toString(counterResponse.getStatus());
         final boolean isError = isErrorStatus(counterResponse.getStatus());
+        final String errorMessage = getErrorMessage(httpRequest);
         final long count = counterResponse.getByteCount();
         final String scheme = httpRequest.getScheme();
         DebugUtil.debug(path, " ; bytes count = ", count);
-        MonitorMetrics.INSTANCE.collectTime(scheme, status, method, path, this.version, isError, elapsedSeconds);
-        MonitorMetrics.INSTANCE.collectSize(scheme, status, method, path, this.version, isError, count);
+        MonitorMetrics.INSTANCE.collectTime(scheme, status, method, path, isError, errorMessage, elapsedSeconds);
+        MonitorMetrics.INSTANCE.collectSize(scheme, status, method, path, isError, errorMessage, count);
     }
 
+    /**
+     * Checks if the parameters is a HTTP status code error
+     *
+     * @param status HTTP status code
+     * @return <code>true</code> if the status code is lower than 200 or greater than or equals 400
+     */
     private boolean isErrorStatus(int status) {
         return status < 200 || status >= 400;
     }
+    
+    /**
+     * Get the error message from a request. 
+     * If error message is null, sets the string to empty string.
+     * 
+     * @param httpRequest request
+     * @return string with the error message or empty string if error message not found.
+     */
+    private String getErrorMessage(HttpServletRequest httpRequest) {
+    	if (errorMessageParam == null) {
+    		return "";
+    	}
+    	String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
+    	if (errorMessage == null) {
+    		return "";
+    	}
+    	
+    	return errorMessage;
+    }
 
+    /**
+     * Checks if a {@link String} is empty
+     *
+     * @param s {@link String} to be checked
+     * @return <code>true</code> if the String is empty
+     */
     private boolean isNotEmpty(String s) {
         return s != null && s.trim().length() != 0;
     }
 
+    /**
+     * Returns a substring of the <code>path</code> based on depth count of slash char "/".
+     *
+     * @param path      HTTP request path
+     * @param pathDepth how many slash "/" to be include on substring. anything less than 1 means full granularity.
+     * @return substring
+     */
     private String substringMaxDepth(String path, int pathDepth) {
         if (path == null || pathDepth < 1) {
             return path;
@@ -177,12 +260,21 @@ public class MetricsCollectorFilter implements Filter {
         return path.substring(0, i);
     }
 
+    /**
+     * Reads the file "application.properties" located in resource folder and return the "application.version"
+     * property value.
+     * If the file not exists, {@link String} "unknown" will be returned.
+     * If an error occurs while reading the file, {@link String} "error-reading-version" will be returned.
+     *
+     * @return value read from the file or "unknown" when file not exist or "error-reading-version" when error occurs.
+     */
     private String getApplicationVersionFromPropertiesFile() {
         try {
             final Properties p = new Properties();
             final InputStream is = getClass().getResourceAsStream("/application.properties");
             if (is != null) {
                 p.load(is);
+                //TODO check property existence
                 return p.getProperty("application.version");
             }
             return "unknown";
