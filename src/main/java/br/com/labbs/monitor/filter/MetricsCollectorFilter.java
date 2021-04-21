@@ -185,7 +185,7 @@ public class MetricsCollectorFilter implements Filter {
      * @param elapsedSeconds  how long time did the request has executed
      */
     private void collect(HttpServletRequest httpRequest, CountingServletResponse counterResponse, String path, double elapsedSeconds) {
-        final String method = httpRequest.getMethod();
+    	final String method = httpRequest.getMethod();
         final String status = Integer.toString(counterResponse.getStatus());
         final boolean isError = isErrorStatus(counterResponse.getStatus());
         final String errorMessage = getErrorMessage(httpRequest);
@@ -214,15 +214,15 @@ public class MetricsCollectorFilter implements Filter {
      * @return string with the error message or empty string if error message not found.
      */
     private String getErrorMessage(HttpServletRequest httpRequest) {
-        if (errorMessageParam == null) {
-            return "";
-        }
-        String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
-        if (errorMessage == null) {
-            return "";
-        }
+    	if (errorMessageParam == null) {
+    		return "";
+    	}
+    	String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
+    	if (errorMessage == null) {
+    		return "";
+    	}
 
-        return errorMessage;
+    	return errorMessage;
     }
 
     /**
