@@ -210,6 +210,20 @@ application.version=${project.version}
 
 Make sure the file `classes/application.properties` exist into your jar or war package and the property value is the same of the pom.xml file.
 
+#### Sending parameter
+
+It's also possible to provide application version sending parameter:
+```
+<init-param>
+    <param-name>application-version</param-name>
+    <param-value>x.x.x</param-value>
+</init-param>
+```
+or programmatically: 
+```
+setInitParameter("application-version", "x.x.x");
+```
+
 ### Exporting metrics
 
 As well as the metrics filter, the class `MetricsServlet` can also be programmatically added to `javax.servlet.ServletContext` or initialized via `web.xml` file.
