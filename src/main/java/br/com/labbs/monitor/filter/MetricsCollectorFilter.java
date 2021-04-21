@@ -56,6 +56,7 @@ public class MetricsCollectorFilter implements Filter {
     private static final String EXCLUSIONS = "exclusions";
     private static final String ERROR_MESSAGE_PARAM = "error-message";
     private static final String DEBUG = "debug";
+    private static final String APPLICATION_VERSION = "application-version";
     private final List<String> exclusions = new ArrayList<String>();
 
     private int pathDepth = 0;
@@ -69,6 +70,7 @@ public class MetricsCollectorFilter implements Filter {
     public void init(FilterConfig filterConfig) {
         double[] buckets = null;
         boolean exportJvmMetrics = true;
+        String exportApplicationVersion = "";
         if (filterConfig != null) {
             String debugParam = filterConfig.getInitParameter(DEBUG);
             if (isNotEmpty(debugParam)) {
@@ -106,11 +108,12 @@ public class MetricsCollectorFilter implements Filter {
             if (isNotEmpty(exportJvmMetricsStr)) {
                 exportJvmMetrics = Boolean.parseBoolean(exportJvmMetricsStr);
             }
+            exportApplicationVersion = filterConfig.getInitParameter(APPLICATION_VERSION);
         }
-        String version = getApplicationVersionFromPropertiesFile();
+        String version = isNotEmpty(exportApplicationVersion) ? exportApplicationVersion : getApplicationVersionFromPropertiesFile();
         // Allow users to capture error messages
         errorMessageParam = filterConfig.getInitParameter(ERROR_MESSAGE_PARAM);
-        
+
         MonitorMetrics.INSTANCE.init(exportJvmMetrics, version, buckets);
     }
 
@@ -182,7 +185,7 @@ public class MetricsCollectorFilter implements Filter {
      * @param elapsedSeconds  how long time did the request has executed
      */
     private void collect(HttpServletRequest httpRequest, CountingServletResponse counterResponse, String path, double elapsedSeconds) {
-    	final String method = httpRequest.getMethod();
+        final String method = httpRequest.getMethod();
         final String status = Integer.toString(counterResponse.getStatus());
         final boolean isError = isErrorStatus(counterResponse.getStatus());
         final String errorMessage = getErrorMessage(httpRequest);
@@ -202,24 +205,24 @@ public class MetricsCollectorFilter implements Filter {
     private boolean isErrorStatus(int status) {
         return status < 200 || status >= 400;
     }
-    
+
     /**
-     * Get the error message from a request. 
+     * Get the error message from a request.
      * If error message is null, sets the string to empty string.
-     * 
+     *
      * @param httpRequest request
      * @return string with the error message or empty string if error message not found.
      */
     private String getErrorMessage(HttpServletRequest httpRequest) {
-    	if (errorMessageParam == null) {
-    		return "";
-    	}
-    	String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
-    	if (errorMessage == null) {
-    		return "";
-    	}
-    	
-    	return errorMessage;
+        if (errorMessageParam == null) {
+            return "";
+        }
+        String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
+        if (errorMessage == null) {
+            return "";
+        }
+
+        return errorMessage;
     }
 
     /**
