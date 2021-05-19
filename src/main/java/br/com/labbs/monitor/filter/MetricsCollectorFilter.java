@@ -17,7 +17,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 /**
  * The MetricsFilter class provides a high-level filter that enables collection of (latency, amount and response
  * size metrics) for Servlet performance, based on schema, status code, HTTP method and URI path.
@@ -57,7 +58,15 @@ public class MetricsCollectorFilter implements Filter {
     private static final String ERROR_MESSAGE_PARAM = "error-message";
     private static final String DEBUG = "debug";
     private static final String APPLICATION_VERSION = "application-version";
+    private static final String DEFAULT_FILTER_REGEX = "^([a-zA-z0-9 ]{0,120})";
+    private static final String FILTER_REGEX_PARAM = "filter-regex";
+    private static final String FILTER_GROUP_INDEX_PARAM = "filter-index";
+    private static final String FILTER_MAX_SIZE_PARAM = "filter-max-size";
     private final List<String> exclusions = new ArrayList<String>();
+    private int filter_group_index = 0;
+    private int filter_max_size = 120;
+    private String filter_regex = "";
+
 
     private int pathDepth = 0;
     private String errorMessageParam = "";
@@ -109,6 +118,13 @@ public class MetricsCollectorFilter implements Filter {
                 exportJvmMetrics = Boolean.parseBoolean(exportJvmMetricsStr);
             }
             exportApplicationVersion = filterConfig.getInitParameter(APPLICATION_VERSION);
+
+            filter_group_index = filterConfig.getInitParameter(FILTER_GROUP_INDEX_PARAM) != null ?
+                Integer.valueOf(filterConfig.getInitParameter(FILTER_GROUP_INDEX_PARAM)) : filter_group_index;
+            filter_max_size = filterConfig.getInitParameter(FILTER_MAX_SIZE_PARAM) != null ?
+                Integer.valueOf(filterConfig.getInitParameter(FILTER_MAX_SIZE_PARAM)) : filter_max_size;
+            filter_regex = filterConfig.getInitParameter(FILTER_REGEX_PARAM) != null ?
+                filterConfig.getInitParameter(FILTER_REGEX_PARAM) : DEFAULT_FILTER_REGEX;
         }
         String version = isNotEmpty(exportApplicationVersion) ? exportApplicationVersion : getApplicationVersionFromPropertiesFile();
         // Allow users to capture error messages
@@ -209,20 +225,39 @@ public class MetricsCollectorFilter implements Filter {
     /**
      * Get the error message from a request.
      * If error message is null, sets the string to empty string.
+     * If a regex is defined, use it to filter message
+     * 
+     * Default regex: ^([a-zA-z0-9 ]{0,120})
+     * Default max size: 120
      *
      * @param httpRequest request
      * @return string with the error message or empty string if error message not found.
      */
     private String getErrorMessage(HttpServletRequest httpRequest) {
-    	if (errorMessageParam == null) {
-    		return "";
-    	}
-    	String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
-    	if (errorMessage == null) {
-    		return "";
-    	}
 
-    	return errorMessage;
+        if (errorMessageParam == null) {
+            return "";
+        }
+        String errorMessage = (String) httpRequest.getAttribute(errorMessageParam);
+        String result = "";
+        if (errorMessage == null) {
+            return result;
+        }
+
+        // filter Error Message with regex
+        if (filter_regex.length() > 0) {
+            final Pattern pattern = Pattern.compile(filter_regex);
+            final Matcher matcher = pattern.matcher(errorMessage);
+    
+            if (matcher.find()) {
+                result = matcher.group(filter_group_index);
+            }
+        }
+        // create limit size of the error message
+        if (result.length() > filter_max_size) {
+            result = result.substring(0, filter_max_size);
+        }
+        return result;
     }
 
     /**
