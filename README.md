@@ -174,6 +174,10 @@ Your java code should look like this:
 req.setAttribute("error-info", "Page not found");
 ```
 
+###### Improving error messages
+
+It is possible to filter the error message to avoid long messages or personal info exposed in the metrics. To do it, three params may be used: `error-message-regex`, `error-message-regex-index`, and `error-message-max-size`. The first will set the regex to apply in the message, with `^([a-zA-z0-9 ]{0,120})` as the default value. The second, `error-message-regex-index`, selects the group of the regex's result with `0` as the default value. The last one, `error-message-max-size`, defines the max size of the message to be truncated and has `120` as the default value.
+
 #### Setting application version
 
 ##### Manually
