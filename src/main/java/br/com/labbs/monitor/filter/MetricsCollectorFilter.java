@@ -59,9 +59,9 @@ public class MetricsCollectorFilter implements Filter {
     private static final String DEBUG = "debug";
     private static final String APPLICATION_VERSION = "application-version";
     private static final String DEFAULT_FILTER_REGEX = "^([a-zA-z0-9 ]{0,120})";
-    private static final String FILTER_REGEX_PARAM = "filter-regex";
-    private static final String FILTER_GROUP_INDEX_PARAM = "filter-index";
-    private static final String FILTER_MAX_SIZE_PARAM = "filter-max-size";
+    private static final String FILTER_REGEX_PARAM = "error-message-regex";
+    private static final String FILTER_GROUP_INDEX_PARAM = "error-message-regex-index";
+    private static final String FILTER_MAX_SIZE_PARAM = "error-message-max-size";
     private final List<String> exclusions = new ArrayList<String>();
     private int filter_group_index = 0;
     private int filter_max_size = 120;
@@ -244,18 +244,22 @@ public class MetricsCollectorFilter implements Filter {
             return result;
         }
 
-        // filter Error Message with regex
-        if (filter_regex.length() > 0) {
-            final Pattern pattern = Pattern.compile(filter_regex);
-            final Matcher matcher = pattern.matcher(errorMessage);
-    
-            if (matcher.find()) {
-                result = matcher.group(filter_group_index);
+        try {
+            // filter Error Message with regex
+            if (filter_regex.length() > 0) {
+                final Pattern pattern = Pattern.compile(filter_regex);
+                final Matcher matcher = pattern.matcher(errorMessage);
+                if (matcher.find()) {
+                    result = matcher.group(filter_group_index);
+                }
             }
-        }
-        // create limit size of the error message
-        if (result.length() > filter_max_size) {
-            result = result.substring(0, filter_max_size);
+            // create limit size of the error message
+            if (result.length() > filter_max_size) {
+                result = result.substring(0, filter_max_size);
+            }
+        } catch (Exception e) {
+            // avoid invalid regex or invalid matcher group index
+            result = "";
         }
         return result;
     }
