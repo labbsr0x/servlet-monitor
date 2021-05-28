@@ -58,13 +58,12 @@ public class MetricsCollectorFilter implements Filter {
     private static final String ERROR_MESSAGE_PARAM = "error-message";
     private static final String DEBUG = "debug";
     private static final String APPLICATION_VERSION = "application-version";
-    private static final String DEFAULT_FILTER_REGEX = "^([a-zA-z0-9 ]{0,120})";
+    private static final String DEFAULT_FILTER_REGEX = "[^A-zÀ-ú .,]+";
     private static final String FILTER_REGEX_PARAM = "error-info-regex";
-    private static final String FILTER_GROUP_INDEX_PARAM = "error-info-regex-index";
     private static final String FILTER_MAX_SIZE_PARAM = "error-info-max-size";
     private final List<String> exclusions = new ArrayList<String>();
     private int filter_group_index = 0;
-    private int filter_max_size = 120;
+    private int filter_max_size = 50;
     private String filter_regex = "";
 
 
@@ -119,8 +118,6 @@ public class MetricsCollectorFilter implements Filter {
             }
             exportApplicationVersion = filterConfig.getInitParameter(APPLICATION_VERSION);
 
-            filter_group_index = filterConfig.getInitParameter(FILTER_GROUP_INDEX_PARAM) != null ?
-                Integer.valueOf(filterConfig.getInitParameter(FILTER_GROUP_INDEX_PARAM)) : filter_group_index;
             filter_max_size = filterConfig.getInitParameter(FILTER_MAX_SIZE_PARAM) != null ?
                 Integer.valueOf(filterConfig.getInitParameter(FILTER_MAX_SIZE_PARAM)) : filter_max_size;
             filter_regex = filterConfig.getInitParameter(FILTER_REGEX_PARAM) != null ?
@@ -245,15 +242,8 @@ public class MetricsCollectorFilter implements Filter {
         }
 
         try {
-            // filter Error Message with regex
-            if (filter_regex.length() > 0) {
-                final Pattern pattern = Pattern.compile(filter_regex);
-                final Matcher matcher = pattern.matcher(errorMessage);
-                if (matcher.find()) {
-                    result = matcher.group(filter_group_index);
-                }
-            }
-            // create limit size of the error message
+            // apply whitelist filter
+            result = errorMessage.replaceAll(filter_regex, "");
             if (result.length() > filter_max_size) {
                 result = result.substring(0, filter_max_size);
             }
