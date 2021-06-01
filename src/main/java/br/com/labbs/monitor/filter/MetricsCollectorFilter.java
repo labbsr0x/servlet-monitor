@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 /**
  * The MetricsFilter class provides a high-level filter that enables collection of (latency, amount and response
  * size metrics) for Servlet performance, based on schema, status code, HTTP method and URI path.
@@ -61,8 +63,8 @@ public class MetricsCollectorFilter implements Filter {
     private static final String DEFAULT_FILTER_REGEX = "[^A-zÀ-ú .,]+";
     private static final String FILTER_REGEX_PARAM = "error-info-regex";
     private static final String FILTER_MAX_SIZE_PARAM = "error-info-max-size";
+    private static final Logger LOGGER = Logger.getLogger(MetricsCollectorFilter.class.getName());
     private final List<String> exclusions = new ArrayList<String>();
-    private int filter_group_index = 0;
     private int filter_max_size = 50;
     private String filter_regex = "";
 
@@ -224,8 +226,8 @@ public class MetricsCollectorFilter implements Filter {
      * If error message is null, sets the string to empty string.
      * If a regex is defined, use it to filter message
      * 
-     * Default regex: ^([a-zA-z0-9 ]{0,120})
-     * Default max size: 120
+     * Default regex: [^A-zÀ-ú .,]+
+     * Default max size: 50
      *
      * @param httpRequest request
      * @return string with the error message or empty string if error message not found.
@@ -250,6 +252,7 @@ public class MetricsCollectorFilter implements Filter {
         } catch (Exception e) {
             // avoid invalid regex or invalid matcher group index
             result = "";
+            LOGGER.warning("Invalid regex: " + e.getMessage());
         }
         return result;
     }
