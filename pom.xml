@@ -4,7 +4,7 @@
 
     <groupId>br.com.labbs</groupId>
     <artifactId>servlet-monitor</artifactId>
-    <version>0.1.2-SNAPSHOT</version>
+    <version>0.1.2</version>
     <packaging>jar</packaging>
 
     <name>servlet-monitor</name>
@@ -25,7 +25,7 @@
         <connection>scm:git:https://github.com/labbsr0x/servlet-monitor.git</connection>
         <developerConnection>scm:git:https://github.com/labbsr0x/servlet-monitor.git</developerConnection>
         <url>https://github.com/labbsr0x/servlet-monitor</url>
-        <tag>HEAD</tag>
+        <tag>0.1.2</tag>
     </scm>
 
     <issueManagement>
