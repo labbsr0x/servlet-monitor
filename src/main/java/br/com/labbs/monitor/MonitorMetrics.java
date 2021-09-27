@@ -21,6 +21,8 @@ import java.util.TimerTask;
  *    request_seconds_count{type, status, method, addr, isError}
  *    request_seconds_sum{type, status, method, addr, isError}
  *
+ * The Histogram only works if buckets param was defined in web.xml
+ * 
  * Counter responseSize:
  *    response_size_bytes{type, status, method, addr, isError}
  *
@@ -40,10 +42,12 @@ public enum MonitorMetrics {
 
     private static final String REQUESTS_SECONDS_METRIC_NAME = "request_seconds";
     private static final String RESPONSE_SIZE_METRIC_NAME = "response_size_bytes";
-    private static final String DEPENDENCY_REQUESTS_SECONDS_METRIC_NAME ="dependency_request_seconds";
+    private static final String DEPENDENCY_REQUESTS_SECONDS_METRIC_NAME = "dependency_request_seconds";
     private static final String DEPENDENCY_UP_METRIC_NAME = "dependency_up";
     private static final String APPLICATION_INFO_METRIC_NAME = "application_info";
-    private static double[] DEFAULT_BUCKETS = {0.1D, 0.3D, 1.5D, 10.5D};
+
+    /* Not used anymore */
+    private static double[] DEFAULT_BUCKETS = { 0.1D, 0.3D, 1.5D, 10.5D };
 
     public CollectorRegistry collectorRegistry = new CollectorRegistry(true);
 
@@ -55,6 +59,7 @@ public enum MonitorMetrics {
 
     private DependencyCheckerExecutor dependencyCheckerExecutor = new DependencyCheckerExecutor();
 
+    private boolean noBuckets = false;
     private boolean initialized;
 
     /**
@@ -62,43 +67,38 @@ public enum MonitorMetrics {
      *
      * @param collectJvmMetrics  collect or not JVM metrics
      * @param applicationVersion which version of your app handled the request
-     * @param buckets            the numbers of buckets
+     * @param buckets            the numbers of buckets if defined
      */
     public void init(boolean collectJvmMetrics, String applicationVersion, double... buckets) {
         if (initialized) {
-            throw new IllegalStateException("The MonitorMetrics instance has already been initialized. " +
-                    "The MonitorMetrics.INSTANCE.init method must be executed only once");
+            throw new IllegalStateException("The MonitorMetrics instance has already been initialized. "
+                    + "The MonitorMetrics.INSTANCE.init method must be executed only once");
         }
         if (buckets == null || buckets.length == 0) {
-            buckets = DEFAULT_BUCKETS;
+            noBuckets = true;
         }
 
-        requestSeconds = Histogram.build().name(REQUESTS_SECONDS_METRIC_NAME)
-                .help("records in a histogram the number of http requests and their duration in seconds")
-                .labelNames("type", "status", "method", "addr", "isError", "errorMessage")
-                .buckets(buckets)
-                .register(collectorRegistry);
+        if (!noBuckets) {
+            requestSeconds = Histogram.build().name(REQUESTS_SECONDS_METRIC_NAME)
+                    .help("records in a histogram the number of http requests and their duration in seconds")
+                    .labelNames("type", "status", "method", "addr", "isError", "errorMessage").buckets(buckets)
+                    .register(collectorRegistry);
 
-        responseSize = Counter.build().name(RESPONSE_SIZE_METRIC_NAME)
-                .help("counts the size of each http response")
-                .labelNames("type", "status", "method", "addr", "isError", "errorMessage")
-                .register(collectorRegistry);
-        
-        dependencyRequestSeconds = Histogram.build().name(DEPENDENCY_REQUESTS_SECONDS_METRIC_NAME)
-        		.help("records in a histogram the number of requests of a dependency and their duration in seconds")
-        		.labelNames("name", "type", "status", "method", "addr", "isError", "errorMessage")
-        		.buckets(buckets)
-        		.register(collectorRegistry);
+            dependencyRequestSeconds = Histogram.build().name(DEPENDENCY_REQUESTS_SECONDS_METRIC_NAME)
+                    .help("records in a histogram the number of requests of a dependency and their duration in seconds")
+                    .labelNames("name", "type", "status", "method", "addr", "isError", "errorMessage").buckets(buckets)
+                    .register(collectorRegistry);
+        }
+
+        responseSize = Counter.build().name(RESPONSE_SIZE_METRIC_NAME).help("counts the size of each http response")
+                .labelNames("type", "status", "method", "addr", "isError", "errorMessage").register(collectorRegistry);
 
         dependencyUp = Gauge.build().name(DEPENDENCY_UP_METRIC_NAME)
-                .help("records if a dependency is up or down. 1 for up, 0 for down")
-                .labelNames("name")
+                .help("records if a dependency is up or down. 1 for up, 0 for down").labelNames("name")
                 .register(collectorRegistry);
 
-        applicationInfo = Gauge.build().name(APPLICATION_INFO_METRIC_NAME)
-                .help("static info of the application")
-                .labelNames("version")
-                .register(collectorRegistry);
+        applicationInfo = Gauge.build().name(APPLICATION_INFO_METRIC_NAME).help("static info of the application")
+                .labelNames("version").register(collectorRegistry);
         // register the application version on application_info metric
         applicationInfo.labels(applicationVersion).set(1);
 
@@ -120,8 +120,9 @@ public enum MonitorMetrics {
      * @param errorMessage   the error message from a request with error
      * @param elapsedSeconds how long time did the request has executed
      */
-    public void collectTime(String type, String status, String method, String addr, boolean isError, String errorMessage, double elapsedSeconds) {
-        if (initialized) {
+    public void collectTime(String type, String status, String method, String addr, boolean isError,
+            String errorMessage, double elapsedSeconds) {
+        if (initialized && !noBuckets) {
             requestSeconds.labels(type, status, method, addr, Boolean.toString(isError), errorMessage)
                     .observe(elapsedSeconds);
         }
@@ -130,38 +131,40 @@ public enum MonitorMetrics {
     /**
      * Collect size metric response_size_bytes
      *
-     * @param type    which request protocol was used (e.g. grpc or http)
-     * @param status  the response status(e.g. response HTTP status code)
-     * @param method  the request method(e.g. HTTP methods GET, POST, PUT)
-     * @param addr    the requested endpoint address
-     * @param isError if the status code reported is an error or not
-     * @param errorMessage   the error message from a request with error
-     * @param size    the response content size
+     * @param type         which request protocol was used (e.g. grpc or http)
+     * @param status       the response status(e.g. response HTTP status code)
+     * @param method       the request method(e.g. HTTP methods GET, POST, PUT)
+     * @param addr         the requested endpoint address
+     * @param isError      if the status code reported is an error or not
+     * @param errorMessage the error message from a request with error
+     * @param size         the response content size
      */
-    public void collectSize(String type, String status, String method, String addr, boolean isError, String errorMessage, final long size) {
+    public void collectSize(String type, String status, String method, String addr, boolean isError,
+            String errorMessage, final long size) {
         if (initialized) {
-            MonitorMetrics.INSTANCE.responseSize.labels(type, status, method, addr, Boolean.toString(isError), errorMessage)
-            	.inc(size);
+            MonitorMetrics.INSTANCE.responseSize
+                    .labels(type, status, method, addr, Boolean.toString(isError), errorMessage).inc(size);
         }
     }
-    
+
     /**
      * Collect latency metric dependency_request_seconds
      *
-     * @param name			 the name of the dependency
+     * @param name           the name of the dependency
      * @param type           which request protocol was used (e.g. grpc or http)
      * @param status         the response status(e.g. response HTTP status code)
      * @param method         the request method(e.g. HTTP methods GET, POST, PUT)
      * @param addr           the requested endpoint address
      * @param isError        if the status code reported is an error or not
-     * @param errorMessage	 the error message of a request
+     * @param errorMessage   the error message of a request
      * @param elapsedSeconds how long time did the request has executed
      */
-    public void collectDependencyTime(String name, String type, String status, String method, String addr, boolean isError, String errorMessage, double elapsedSeconds) {
-    	if(initialized) {
-    		dependencyRequestSeconds.labels(name, type, status, method, addr, Boolean.toString(isError), errorMessage)
-    			.observe(elapsedSeconds);
-    	}
+    public void collectDependencyTime(String name, String type, String status, String method, String addr,
+            boolean isError, String errorMessage, double elapsedSeconds) {
+        if (initialized && !noBuckets) {
+            dependencyRequestSeconds.labels(name, type, status, method, addr, Boolean.toString(isError), errorMessage)
+                    .observe(elapsedSeconds);
+        }
     }
 
     /**
@@ -181,8 +184,8 @@ public enum MonitorMetrics {
         TimerTask task = new TimerTask() {
             public void run() {
                 if (!initialized) {
-                    //skipping, the MonitorMetrics instance has not been initialized yet.
-                    //MonitorMetrics.INSTANCE.init must be executed once.
+                    // skipping, the MonitorMetrics instance has not been initialized yet.
+                    // MonitorMetrics.INSTANCE.init must be executed once.
                     return;
                 }
                 DependencyState state = checker.run();
@@ -195,20 +198,21 @@ public enum MonitorMetrics {
     /**
      * Add a dependency event to be monitored
      *
-     * @param name			 the name of the dependency
+     * @param name           the name of the dependency
      * @param type           which request protocol was used (e.g. http, grpc, etc)
      * @param status         the response status(e.g. response HTTP status code)
      * @param method         the request method(e.g. HTTP methods GET, POST, PUT)
      * @param addr           the requested endpoint address
      * @param isError        if the status code reported is an error or not
-     * @param errorMessage	 the error message of a request
+     * @param errorMessage   the error message of a request
      * @param elapsedSeconds how long the request lasted in seconds
      */
-    public void addDependencyEvent(String name, String type, String status, String method, String addr, boolean isError, String errorMessage, double elapsedSeconds) {
-    	if (elapsedSeconds <= 0) {
-    		//skipping, elapsed seconds cannot be minor than zero
-    		return;
-    	}
-    	collectDependencyTime(name, type, status, method, addr, isError, errorMessage, elapsedSeconds);
+    public void addDependencyEvent(String name, String type, String status, String method, String addr, boolean isError,
+            String errorMessage, double elapsedSeconds) {
+        if (elapsedSeconds <= 0) {
+            // skipping, elapsed seconds cannot be minor than zero
+            return;
+        }
+        collectDependencyTime(name, type, status, method, addr, isError, errorMessage, elapsedSeconds);
     }
 }

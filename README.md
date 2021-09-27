@@ -17,9 +17,9 @@ dependency_request_seconds_count{name, type, status, isError, errorMessage, meth
 dependency_request_seconds_sum{name, type, status, isError, errorMessage, method, add}
 application_info{version}
 ```
+**Attention, Buckets/Histogram only work if It was defined in web.xml file**
 
 Details:
-
 1. The `request_seconds_bucket` metric defines the histogram of how many requests are falling into the well-defined buckets represented by the label `le`;
 
 2. The `request_seconds_count` is a counter that counts the overall number of requests with those exact label occurrences;
@@ -101,10 +101,9 @@ the most accurate measurement of latency and response size. -->
 
 It is possible to use the following properties to configure the Metrics Collector Filter by init parameters on the web.xml file.
 
-##### Override default buckets
+##### Configure buckets metrics
 
-The number of buckets is optionally overridable and can be configured by passing a comma-separated string of doubles as the `buckets` init parameter. 
-The `buckets` default value is `0.1, 0.3, 1.5, 10.5`.
+The number of buckets is only available and can be configured by passing a comma-separated string of doubles as the `buckets` init parameter. 
 
 e.g.
 ```xml
