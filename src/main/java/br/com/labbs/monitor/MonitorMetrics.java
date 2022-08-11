@@ -62,14 +62,17 @@ public enum MonitorMetrics {
     private boolean noBuckets = false;
     private boolean initialized;
 
+    private String dependencyErrorRegex;
+    
     /**
      * Initialize metric collectors
      *
      * @param collectJvmMetrics  collect or not JVM metrics
      * @param applicationVersion which version of your app handled the request
+     * @param dependencyErrorRegex 
      * @param buckets            the numbers of buckets if defined
      */
-    public void init(boolean collectJvmMetrics, String applicationVersion, double... buckets) {
+    public void init(boolean collectJvmMetrics, String applicationVersion, String dependencyErrorRegex, double... buckets) {
         if (initialized) {
             throw new IllegalStateException("The MonitorMetrics instance has already been initialized. "
                     + "The MonitorMetrics.INSTANCE.init method must be executed only once");
@@ -106,6 +109,7 @@ public enum MonitorMetrics {
             DefaultExports.register(collectorRegistry);
         }
 
+        this.dependencyErrorRegex = dependencyErrorRegex;
         initialized = true;
     }
 
@@ -162,12 +166,24 @@ public enum MonitorMetrics {
     public void collectDependencyTime(String name, String type, String status, String method, String addr,
             boolean isError, String errorMessage, double elapsedSeconds) {
         if (initialized && !noBuckets) {
-            dependencyRequestSeconds.labels(name, type, status, method, addr, Boolean.toString(isError), errorMessage)
+        	String errorToWrite = errorMessage;
+        	if (dependencyErrorRegex != null) {
+        		errorToWrite = sanitizeError(errorMessage);
+        	}
+            dependencyRequestSeconds.labels(name, type, status, method, addr, Boolean.toString(isError), errorToWrite)
                     .observe(elapsedSeconds);
         }
     }
 
-    /**
+	private String sanitizeError(String errorMessage) {
+		try {
+            return errorMessage.replaceAll(this.dependencyErrorRegex, "");
+        } catch (Exception e) {
+            return "#ERROR INVALID REGEX#";
+        }
+	}
+
+	/**
      * Cancel all scheduled dependency checkers and terminates the executor timer.
      */
     public void cancelAllDependencyCheckers() {

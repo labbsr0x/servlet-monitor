@@ -1,7 +1,11 @@
 package br.com.labbs.monitor.filter;
 
-import br.com.labbs.monitor.MonitorMetrics;
-import io.prometheus.client.SimpleTimer;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.logging.Logger;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -12,15 +16,9 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import br.com.labbs.monitor.MonitorMetrics;
+import io.prometheus.client.SimpleTimer;
 /**
  * The MetricsFilter class provides a high-level filter that enables collection of (latency, amount and response
  * size metrics) for Servlet performance, based on schema, status code, HTTP method and URI path.
@@ -62,11 +60,13 @@ public class MetricsCollectorFilter implements Filter {
     private static final String APPLICATION_VERSION = "application-version";
     private static final String DEFAULT_FILTER_REGEX = "[^A-zÀ-ú .,]+";
     private static final String FILTER_REGEX_PARAM = "error-info-regex";
+    private static final String ENABLE_ERROR_REGEX_DEPENDENCY = "enable-error-regex-dependency";
     private static final String FILTER_MAX_SIZE_PARAM = "error-info-max-size";
     private static final Logger LOGGER = Logger.getLogger(MetricsCollectorFilter.class.getName());
     private final List<String> exclusions = new ArrayList<String>();
     private int filter_max_size = 50;
     private String filter_regex = "";
+    private boolean enableErrorDependencyRegex = true; //defaut
 
 
     private int pathDepth = 0;
@@ -118,6 +118,12 @@ public class MetricsCollectorFilter implements Filter {
             if (isNotEmpty(exportJvmMetricsStr)) {
                 exportJvmMetrics = Boolean.parseBoolean(exportJvmMetricsStr);
             }
+            
+            String enableErrorRegexDependencyParam = filterConfig.getInitParameter(ENABLE_ERROR_REGEX_DEPENDENCY);
+            if ("false".equalsIgnoreCase(enableErrorRegexDependencyParam)) {
+                enableErrorDependencyRegex = false;
+            }
+            
             exportApplicationVersion = filterConfig.getInitParameter(APPLICATION_VERSION);
 
             filter_max_size = filterConfig.getInitParameter(FILTER_MAX_SIZE_PARAM) != null ?
@@ -128,8 +134,13 @@ public class MetricsCollectorFilter implements Filter {
         String version = isNotEmpty(exportApplicationVersion) ? exportApplicationVersion : getApplicationVersionFromPropertiesFile();
         // Allow users to capture error messages
         errorMessageParam = filterConfig.getInitParameter(ERROR_MESSAGE_PARAM);
-
-        MonitorMetrics.INSTANCE.init(exportJvmMetrics, version, buckets);
+        
+        String dependencyErrorRegex = null;
+        if (enableErrorDependencyRegex) {
+        	dependencyErrorRegex = filter_regex;
+        }
+        
+        MonitorMetrics.INSTANCE.init(exportJvmMetrics, version, dependencyErrorRegex, buckets);
     }
 
     /**
