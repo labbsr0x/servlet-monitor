@@ -4,7 +4,7 @@
 
     <groupId>br.com.labbs</groupId>
     <artifactId>servlet-monitor</artifactId>
-    <version>0.1.1-SNAPSHOT</version>
+    <version>0.1.4-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>servlet-monitor</name>
@@ -48,6 +48,7 @@
         <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
         <maven-javadoc-plugin.version>2.9.1</maven-javadoc-plugin.version>
         <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
+        <maven-surefire-plugin.version>3.0.0-M1</maven-surefire-plugin.version>
     </properties>
 
     <dependencies>
@@ -79,7 +80,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -92,6 +93,21 @@
 
     <build>
         <plugins>
+            <plugin>
+              <configuration>
+                <serverId>ossrh</serverId>
+                <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              </configuration>
+              <artifactId>nexus-staging-maven-plugin</artifactId>
+              <extensions>true</extensions>
+              <groupId>org.sonatype.plugins</groupId>
+              <version>1.6.7</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
@@ -114,6 +130,57 @@
                     <target>1.6</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
+            </plugin>
+            <plugin>
+              <executions>
+                <execution>
+                  <id>attach-sources</id>
+                  <goals>
+                    <goal>jar-no-fork</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <artifactId>maven-source-plugin</artifactId>
+              <groupId>org.apache.maven.plugins</groupId>
+              <version>2.2.1</version>
+            </plugin>
+            <plugin>
+              <executions>
+                <execution>
+                  <id>attach-javadocs</id>
+                  <goals>
+                    <goal>jar</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <artifactId>maven-javadoc-plugin</artifactId>
+              <groupId>org.apache.maven.plugins</groupId>
+              <version>3.2.0</version>
+            </plugin>
+            <plugin>
+              <configuration>
+                <optimize>true</optimize>
+                <debug>true</debug>
+                <showDeprecation>true</showDeprecation>
+                <showWarnings>true</showWarnings>
+              </configuration>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <groupId>org.apache.maven.plugins</groupId>
+            </plugin>
+
+            <plugin>
+              <executions>
+                <execution>
+                  <id>sign-artifacts</id>
+                  <phase>verify</phase>
+                  <goals>
+                    <goal>sign</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <artifactId>maven-gpg-plugin</artifactId>
+              <groupId>org.apache.maven.plugins</groupId>
+              <version>1.6</version>
             </plugin>
         </plugins>
     </build>

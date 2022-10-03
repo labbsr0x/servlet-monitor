@@ -17,9 +17,9 @@ dependency_request_seconds_count{name, type, status, isError, errorMessage, meth
 dependency_request_seconds_sum{name, type, status, isError, errorMessage, method, add}
 application_info{version}
 ```
+**Attention, Buckets/Histogram only work if It was defined in web.xml file**
 
 Details:
-
 1. The `request_seconds_bucket` metric defines the histogram of how many requests are falling into the well-defined buckets represented by the label `le`;
 
 2. The `request_seconds_count` is a counter that counts the overall number of requests with those exact label occurrences;
@@ -101,10 +101,9 @@ the most accurate measurement of latency and response size. -->
 
 It is possible to use the following properties to configure the Metrics Collector Filter by init parameters on the web.xml file.
 
-##### Override default buckets
+##### Configure buckets metrics
 
-The number of buckets is optionally overridable and can be configured by passing a comma-separated string of doubles as the `buckets` init parameter. 
-The `buckets` default value is `0.1, 0.3, 1.5, 10.5`.
+The number of buckets is only available and can be configured by passing a comma-separated string of doubles as the `buckets` init parameter. 
 
 e.g.
 ```xml
@@ -174,6 +173,10 @@ Your java code should look like this:
 req.setAttribute("error-info", "Page not found");
 ```
 
+###### Improving error messages
+
+It is possible to filter the error message to avoid long messages or personal info exposed in the metrics. To do it, two params may be used: `error-info-regex` and `error-info-max-size`. The first will set the regex to apply in the message, with `[^A-zÀ-ú .,]+` as the default value. The second, `error-info-max-size`, defines the max size of the message to be truncated and has `50` as the default value.
+
 #### Setting application version
 
 ##### Manually
@@ -209,6 +212,20 @@ application.version=${project.version}
 ```
 
 Make sure the file `classes/application.properties` exist into your jar or war package and the property value is the same of the pom.xml file.
+
+#### Sending parameter
+
+It's also possible to provide application version sending parameter:
+```
+<init-param>
+    <param-name>application-version</param-name>
+    <param-value>x.x.x</param-value>
+</init-param>
+```
+or programmatically: 
+```
+setInitParameter("application-version", "x.x.x");
+```
 
 ### Exporting metrics
 
