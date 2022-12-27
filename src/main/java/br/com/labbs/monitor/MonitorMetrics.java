@@ -2,6 +2,7 @@ package br.com.labbs.monitor;
 
 import br.com.labbs.monitor.dependency.DependencyChecker;
 import br.com.labbs.monitor.dependency.DependencyCheckerExecutor;
+import br.com.labbs.monitor.dependency.DependencyCheckerFactory;
 import br.com.labbs.monitor.dependency.DependencyState;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Counter;
@@ -57,7 +58,7 @@ public enum MonitorMetrics {
     public Gauge dependencyUp;
     public Gauge applicationInfo;
 
-    private DependencyCheckerExecutor dependencyCheckerExecutor = new DependencyCheckerExecutor();
+    private DependencyCheckerExecutor dependencyCheckerExecutor = DependencyCheckerFactory.create();
 
     private boolean noBuckets = false;
     private boolean initialized;
