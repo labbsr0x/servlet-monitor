@@ -2,10 +2,10 @@ package br.com.labbs.monitor.exporter;
 
 import br.com.labbs.monitor.MonitorMetrics;
 import io.prometheus.client.exporter.common.TextFormat;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
 
@@ -16,7 +16,7 @@ public class MetricsServlet extends HttpServlet {
 
     /**
      * {@inheritDoc}
-     * {@link javax.servlet.http.HttpServlet#doGet(HttpServletRequest, HttpServletResponse)}
+     * {@link HttpServlet#doGet(HttpServletRequest, HttpServletResponse)}
      */
     @Override
     protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
@@ -34,7 +34,7 @@ public class MetricsServlet extends HttpServlet {
 
     /**
      * {@inheritDoc}
-     * {@link javax.servlet.http.HttpServlet#doPost(HttpServletRequest, HttpServletResponse)}
+     * {@link HttpServlet#doPost(HttpServletRequest, HttpServletResponse)}
      */
     @Override
     protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {

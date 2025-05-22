@@ -7,18 +7,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import br.com.labbs.monitor.MonitorMetrics;
 import io.prometheus.client.SimpleTimer;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 /**
  * The MetricsFilter class provides a high-level filter that enables collection of (latency, amount and response
  * size metrics) for Servlet performance, based on schema, status code, HTTP method and URI path.

@@ -1,6 +1,8 @@
 package br.com.labbs.monitor.filter;
 
-import javax.servlet.ServletOutputStream;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
+
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -12,8 +14,10 @@ import java.io.OutputStream;
 public class CountingServletOutputStream extends ServletOutputStream {
 
     private final CountingOutputStream output;
+    private final ServletOutputStream servletOutputStream;
 
     public CountingServletOutputStream(ServletOutputStream output) {
+        this.servletOutputStream = output;
         this.output = new CountingOutputStream(output);
         DebugUtil.debug("CountingServletOutputStream init");
     }
@@ -34,6 +38,26 @@ public class CountingServletOutputStream extends ServletOutputStream {
     @Override
     public void flush() throws IOException {
         output.flush();
+    }
+
+    /**
+     * {@inheritDoc}
+     * {@link ServletOutputStream#isReady()} ()}
+     */
+    @Override
+    public boolean isReady() {
+        // Delegate isReady to the actual ServletOutputStream
+        return servletOutputStream.isReady();
+    }
+
+    /**
+     * {@inheritDoc}
+     * {@link ServletOutputStream#setWriteListener(WriteListener)} ()}
+     */
+    @Override
+    public void setWriteListener(WriteListener writeListener) {
+        // Delegate setWriteListener to the actual ServletOutputStream
+        servletOutputStream.setWriteListener(writeListener);
     }
 
     /**
