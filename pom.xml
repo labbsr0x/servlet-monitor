@@ -103,7 +103,7 @@
                 <artifactId>nexus-staging-maven-plugin</artifactId>
                 <extensions>true</extensions>
                 <groupId>org.sonatype.plugins</groupId>
-                <version>1.6.7</version>
+                <version>1.6.13</version>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
